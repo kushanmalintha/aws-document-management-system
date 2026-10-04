@@ -5,6 +5,12 @@ class Settings(BaseSettings):
     app_name: str = "AWS Document Management System"
     environment: str = "development"
 
+    postgres_db: str
+    postgres_user: str
+    postgres_password: str
+    postgres_host: str = "localhost"
+    postgres_port: int = 5433
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -12,4 +18,4 @@ class Settings(BaseSettings):
     )
 
 
-settings = Settings()
+settings = Settings() # type: ignore

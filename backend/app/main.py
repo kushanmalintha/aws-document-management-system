@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.api.router import api_router
 from app.core.config import settings
+from app.db.database import engine
 
 
 app = FastAPI(
@@ -29,6 +31,17 @@ async def health_check() -> dict[str, str]:
     return {
         "status": "healthy",
         "service": "dms-backend",
+    }
+
+
+@app.get("/health/database")
+async def database_health_check() -> dict[str, str]:
+    with engine.connect() as connection:
+        connection.execute(text("SELECT 1"))
+
+    return {
+        "status": "healthy",
+        "database": "dms",
     }
 
 
