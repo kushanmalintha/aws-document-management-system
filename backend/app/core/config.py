@@ -8,8 +8,12 @@ class Settings(BaseSettings):
     postgres_db: str
     postgres_user: str
     postgres_password: str
-    postgres_host: str = "localhost"
-    postgres_port: int = 5433
+    postgres_host: str
+    postgres_port: int
+
+    jwt_secret_key: str
+    jwt_algorithm: str
+    jwt_access_token_expire_minutes: int
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -18,4 +22,4 @@ class Settings(BaseSettings):
     )
 
 
-settings = Settings() # type: ignore
+settings = Settings()
