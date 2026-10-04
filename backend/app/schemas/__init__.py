@@ -9,6 +9,11 @@ from app.schemas.user import (
     UserProfileResponse,
     UserProfileUpdateRequest,
 )
+from app.schemas.folder import (
+    FolderCreateRequest,
+    FolderResponse,
+    FolderUpdateRequest,
+)
 
 __all__ = [
     "RegisterRequest",
@@ -18,4 +23,7 @@ __all__ = [
     "MessageResponse",
     "UserProfileResponse",
     "UserProfileUpdateRequest",
+    "FolderCreateRequest",
+    "FolderResponse",
+    "FolderUpdateRequest"
 ]
