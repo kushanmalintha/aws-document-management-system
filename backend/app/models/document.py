@@ -69,7 +69,7 @@ class Document(Base):
 
     s3_key: Mapped[str] = mapped_column(
         String(1024),
-        nullable=False,
+        nullable=True,
     )
 
     status: Mapped[DocumentStatus] = mapped_column(
