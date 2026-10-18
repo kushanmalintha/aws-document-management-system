@@ -22,6 +22,7 @@ from fastapi import (
     File,
     Form,
     HTTPException,
+    Path,
     Query,
     UploadFile,
     status,
@@ -34,6 +35,14 @@ from app.infrastructure.local_storage import LocalStorage
 from app.models.folder import Folder
 from app.services.storage import storage_service
 
+from app.models.document_version import DocumentVersion
+
+import hashlib
+
+from app.schemas.document import (
+    DocumentResponse,
+    DocumentVersionResponse,
+)
 
 router = APIRouter(
     prefix="/documents",
@@ -187,8 +196,18 @@ async def upload_document(
 
         document.s3_key = storage_key
         document.status = DocumentStatus.UPLOADED
+        document.current_version = 1
 
-        # Commit metadata only after the file has been saved.
+        initial_version = DocumentVersion(
+            document_id=document.id,
+            version_number=1,
+            s3_key=storage_key,
+            size_bytes=size_bytes,
+            checksum=None,
+        )
+
+        db.add(initial_version)
+
         db.commit()
 
     except Exception as exc:
@@ -312,6 +331,190 @@ def get_document(
 
     return DocumentResponse.model_validate(document)
 
+
+@router.post(
+    "/{document_id}/versions",
+    response_model=DocumentResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_document_version(
+    document_id: UUID,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Lock the document row while calculating the next version.
+    document = (
+        db.query(Document)
+        .filter(Document.id == document_id)
+        .with_for_update()
+        .first()
+    )
+
+    if document is None or document.deleted_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
+    if document.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this document",
+        )
+
+    if not document.s3_key:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Document has no current stored file",
+        )
+
+    # Keep the same file extension because the current model
+    # stores filename and content type on Document, not per version.
+    original_extension = (
+        PurePosixPath(document.name).suffix.lower()
+    )
+    uploaded_filename = (file.filename or "").replace("\\", "/")
+    uploaded_filename = uploaded_filename.rsplit("/", 1)[-1].strip()
+    uploaded_extension = PurePosixPath(uploaded_filename).suffix.lower()
+
+    if not uploaded_filename or uploaded_extension != original_extension:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The new version must use the same file extension",
+        )
+
+    if original_extension not in ALLOWED_DOCUMENT_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="This file extension is not allowed",
+        )
+
+    # Count actual bytes and calculate a SHA-256 checksum.
+    size_bytes = 0
+    checksum = hashlib.sha256()
+
+    while True:
+        chunk = await file.read(UPLOAD_CHUNK_SIZE)
+
+        if not chunk:
+            break
+
+        size_bytes += len(chunk)
+
+        if size_bytes > settings.max_upload_size_bytes:
+            await file.close()
+            raise HTTPException(
+                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                detail="File exceeds the maximum upload size",
+            )
+
+        checksum.update(chunk)
+
+    if size_bytes == 0:
+        await file.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Empty files are not allowed",
+        )
+
+    await file.seek(0)
+
+    new_version_number = document.current_version + 1
+    storage_key = (
+        f"documents/{current_user.id}/"
+        f"{document.id}/v{new_version_number}/"
+        f"{uuid4().hex}{original_extension}"
+    )
+
+    storage_attempted = False
+
+    try:
+        # Store the new file at a unique path first.
+        storage_attempted = True
+        storage_service.save(file.file, storage_key)
+
+        # Record the new version in the same DB transaction
+        # that updates the current document metadata.
+        new_version = DocumentVersion(
+            document_id=document.id,
+            version_number=new_version_number,
+            s3_key=storage_key,
+            size_bytes=size_bytes,
+            checksum=checksum.hexdigest(),
+        )
+
+        db.add(new_version)
+
+        document.current_version = new_version_number
+        document.s3_key = storage_key
+        document.size_bytes = size_bytes
+        document.status = DocumentStatus.UPLOADED
+
+        db.commit()
+        db.refresh(document)
+
+    except Exception as exc:
+        db.rollback()
+
+        # Remove the new file if the database update fails.
+        if storage_attempted:
+            try:
+                storage_service.delete(storage_key)
+            except Exception:
+                logger.exception(
+                    "Could not clean up failed document version %s",
+                    storage_key,
+                )
+
+        logger.exception("Document version upload failed")
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="The document version could not be uploaded",
+        ) from exc
+
+    finally:
+        await file.close()
+
+    return DocumentResponse.model_validate(document)
+
+
+@router.get(
+    "/{document_id}/versions",
+    response_model=list[DocumentVersionResponse],
+)
+def list_document_versions(
+    document_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    document = db.get(Document, document_id)
+
+    if document is None or document.deleted_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
+    if document.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this document",
+        )
+
+    versions = (
+        db.query(DocumentVersion)
+        .filter(DocumentVersion.document_id == document.id)
+        .order_by(DocumentVersion.version_number.asc())
+        .all()
+    )
+
+    return [
+        DocumentVersionResponse.model_validate(version)
+        for version in versions
+    ]
+
 @router.get("/{document_id}/download")
 def download_document(
     document_id: UUID,
@@ -359,6 +562,70 @@ def download_document(
                 f"attachment; filename*=UTF-8''{safe_filename}"
             ),
             "Content-Length": str(document.size_bytes),
+            "X-Content-Type-Options": "nosniff",
+        },
+        background=BackgroundTask(stored_file.close),
+    )
+
+@router.get(
+    "/{document_id}/versions/{version_number}/download",
+)
+def download_document_version(
+    document_id: UUID,
+    version_number: int = Path(ge=1),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    document = db.get(Document, document_id)
+
+    if document is None or document.deleted_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
+    if document.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this document",
+        )
+
+    version = (
+        db.query(DocumentVersion)
+        .filter(
+            DocumentVersion.document_id == document.id,
+            DocumentVersion.version_number == version_number,
+        )
+        .first()
+    )
+
+    if version is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document version not found",
+        )
+
+    try:
+        stored_file = storage_service.read(version.s3_key)
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Stored document version not found",
+        ) from exc
+
+    safe_filename = quote(document.name, safe="")
+
+    return StreamingResponse(
+        iter(
+            lambda: stored_file.read(UPLOAD_CHUNK_SIZE),
+            b"",
+        ),
+        media_type=document.content_type,
+        headers={
+            "Content-Disposition": (
+                f"attachment; filename*=UTF-8''{safe_filename}"
+            ),
+            "Content-Length": str(version.size_bytes),
             "X-Content-Type-Options": "nosniff",
         },
         background=BackgroundTask(stored_file.close),

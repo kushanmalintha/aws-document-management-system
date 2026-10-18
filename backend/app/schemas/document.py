@@ -18,3 +18,13 @@ class DocumentResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None
+
+class DocumentVersionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    document_id: UUID
+    version_number: int
+    size_bytes: int
+    checksum: str | None
+    created_at: datetime
