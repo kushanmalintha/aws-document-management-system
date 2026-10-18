@@ -17,6 +17,23 @@ class Settings(BaseSettings):
 
     local_storage_path: str = "local_storage"
 
+    max_upload_size_bytes: int = 10 * 1024 * 1024
+
+    allowed_document_extensions: tuple[str, ...] = (
+        ".pdf",
+        ".txt",
+        ".doc",
+        ".docx",
+        ".xls",
+        ".xlsx",
+        ".ppt",
+        ".pptx",
+        ".csv",
+        ".png",
+        ".jpg",
+        ".jpeg",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
