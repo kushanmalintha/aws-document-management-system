@@ -12,6 +12,7 @@ from app.schemas.folder import (
     FolderResponse,
     FolderUpdateRequest,
 )
+from app.services.activity_service import record_activity
 
 
 router = APIRouter(prefix="/folders", tags=["Folders"])
@@ -49,6 +50,21 @@ def create_folder(
     )
 
     db.add(folder)
+
+    record_activity(
+        db=db,
+        user_id=current_user.id,
+        action="FOLDER_CREATED",
+        metadata_json={
+            "name": folder.name,
+            "parent_folder_id": (
+                str(folder.parent_folder_id)
+                if folder.parent_folder_id
+                else None
+            ),
+        },
+    )
+
     db.commit()
     db.refresh(folder)
 
@@ -128,6 +144,13 @@ def update_folder(
 
     folder.name = request.name.strip()
 
+    record_activity(
+        db=db,
+        user_id=current_user.id,
+        action="FOLDER_RENAMED",
+        metadata_json={"name": folder.name},
+    )
+
     db.commit()
     db.refresh(folder)
 
@@ -156,6 +179,15 @@ def delete_folder(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have access to this folder",
         )
+
+    deleted_folder_name = folder.name
+
+    record_activity(
+        db=db,
+        user_id=current_user.id,
+        action="FOLDER_DELETED",
+        metadata_json={"name": deleted_folder_name},
+    )
 
     db.delete(folder)
     db.commit()

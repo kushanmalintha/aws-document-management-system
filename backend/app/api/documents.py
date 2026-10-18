@@ -1,17 +1,7 @@
-from datetime import datetime, timezone
-from uuid import UUID
-
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
-
-from app.core.dependencies import get_current_user
-from app.db.database import get_db
-from app.models.document import Document, DocumentStatus
-from app.models.user import User
-from app.schemas.document import DocumentResponse
-
+import hashlib
 import logging
 import mimetypes
+from datetime import datetime, timezone
 from pathlib import PurePosixPath
 from urllib.parse import quote
 from uuid import UUID, uuid4
@@ -28,21 +18,19 @@ from fastapi import (
     status,
 )
 from fastapi.responses import StreamingResponse
+from sqlalchemy.orm import Session
 from starlette.background import BackgroundTask
 
 from app.core.config import settings
-from app.infrastructure.local_storage import LocalStorage
-from app.models.folder import Folder
-from app.services.storage import storage_service
-
+from app.core.dependencies import get_current_user
+from app.db.database import get_db
+from app.models.document import Document, DocumentStatus
 from app.models.document_version import DocumentVersion
-
-import hashlib
-
-from app.schemas.document import (
-    DocumentResponse,
-    DocumentVersionResponse,
-)
+from app.models.folder import Folder
+from app.models.user import User
+from app.schemas.document import DocumentResponse, DocumentVersionResponse
+from app.services.activity_service import record_activity
+from app.services.storage import storage_service
 
 router = APIRouter(
     prefix="/documents",
@@ -207,6 +195,18 @@ async def upload_document(
         )
 
         db.add(initial_version)
+
+        record_activity(
+            db=db,
+            user_id=current_user.id,
+            action="DOCUMENT_UPLOADED",
+            document_id=document.id,
+            metadata_json={
+                "name": document.name,
+                "size_bytes": size_bytes,
+                "version_number": 1,
+            },
+        )
 
         db.commit()
 
@@ -451,6 +451,18 @@ async def upload_document_version(
         document.size_bytes = size_bytes
         document.status = DocumentStatus.UPLOADED
 
+        record_activity(
+            db=db,
+            user_id=current_user.id,
+            action="DOCUMENT_VERSION_UPLOADED",
+            document_id=document.id,
+            metadata_json={
+                "name": document.name,
+                "version_number": new_version_number,
+                "size_bytes": size_bytes,
+            },
+        )
+
         db.commit()
         db.refresh(document)
 
@@ -549,6 +561,27 @@ def download_document(
             detail="Stored document not found",
         ) from exc
 
+    try:
+        record_activity(
+            db=db,
+            user_id=current_user.id,
+            action="DOCUMENT_DOWNLOADED",
+            document_id=document.id,
+            metadata_json={
+                "name": document.name,
+                "version_number": document.current_version,
+            },
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        stored_file.close()
+        logger.exception("Could not record document download activity")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="The download could not be recorded",
+        )
+
     safe_filename = quote(document.name, safe="")
 
     return StreamingResponse(
@@ -613,6 +646,27 @@ def download_document_version(
             detail="Stored document version not found",
         ) from exc
 
+    try:
+        record_activity(
+            db=db,
+            user_id=current_user.id,
+            action="DOCUMENT_VERSION_DOWNLOADED",
+            document_id=document.id,
+            metadata_json={
+                "name": document.name,
+                "version_number": version.version_number,
+            },
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        stored_file.close()
+        logger.exception("Could not record document version download activity")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="The version download could not be recorded",
+        )
+
     safe_filename = quote(document.name, safe="")
 
     return StreamingResponse(
@@ -662,6 +716,14 @@ def delete_document(
 
     document.deleted_at = datetime.now(timezone.utc)
     document.status = DocumentStatus.DELETED
+
+    record_activity(
+        db=db,
+        user_id=current_user.id,
+        action="DOCUMENT_DELETED",
+        document_id=document.id,
+        metadata_json={"name": document.name},
+    )
 
     db.commit()
 
