@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str
     jwt_access_token_expire_minutes: int
 
+    local_storage_path: str = "local_storage"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
