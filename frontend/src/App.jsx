@@ -3,6 +3,7 @@ import { Link, Route, Routes } from "react-router-dom";
 import { useBackendHealth } from "./hooks/useBackendHealth";
 
 import RegisterPage from "./pages/RegisterPage";
+import LoginPage from "./pages/LoginPage";
 
 function HomePage() {
   return (
@@ -74,6 +75,7 @@ function App() {
       <Route path="/health" element={<HealthPage />} />
       <Route path="*" element={<NotFoundPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/login" element={<LoginPage />} />
     </Routes>
   );
 }
