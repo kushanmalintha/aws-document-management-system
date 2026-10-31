@@ -4,6 +4,7 @@ import AppLayout from "./components/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import DashboardPage from "./pages/DashboardPage";
 
 function ComingSoonPage({ title }) {
   return (
@@ -24,10 +25,7 @@ export default function App() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route
-            path="/dashboard"
-            element={<ComingSoonPage title="Dashboard" />}
-          />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route
             path="/documents"
             element={<ComingSoonPage title="Documents" />}
