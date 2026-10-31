@@ -1,11 +1,27 @@
-
 import api from "./api";
 
-export async function getDocuments() {
-  const response = await api.get("/api/documents");
+export async function getDocuments({
+  search = "",
+  contentType = "",
+  sortBy = "created_at",
+  sortOrder = "desc",
+} = {}) {
+  const params = {
+    sort_by: sortBy,
+    sort_order: sortOrder,
+  };
+
+  if (search.trim()) {
+    params.search = search.trim();
+  }
+
+  if (contentType) {
+    params.content_type = contentType;
+  }
+
+  const response = await api.get("/api/documents", { params });
   const data = response.data;
 
-  // Support a direct list or a list wrapped in an object.
   if (Array.isArray(data)) {
     return data;
   }
