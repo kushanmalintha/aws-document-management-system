@@ -3,12 +3,14 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { getApiErrorMessage } from "../services/api";
-import { loginUser } from "../services/authService";
+import { useAuth } from "../context/authContext";
 import "../styles/auth.css";
 
 function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const { login } = useAuth();
 
   const [form, setForm] = useState({
     email: "",
@@ -50,14 +52,15 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      await loginUser({
+      await login({
         email,
         password: form.password,
       });
 
-      // The authentication context and protected routes
-      // will be integrated in Task 0.15.6.
-      navigate("/dashboard", { replace: true });
+      const destination =
+        location.state?.from?.pathname || "/dashboard";
+
+      navigate(destination, { replace: true });
     } catch (err) {
       setError(
         getApiErrorMessage(

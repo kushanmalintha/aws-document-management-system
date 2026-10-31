@@ -4,6 +4,7 @@ import { useBackendHealth } from "./hooks/useBackendHealth";
 
 import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function HomePage() {
   return (
@@ -76,6 +77,19 @@ function App() {
       <Route path="*" element={<NotFoundPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route element={<ProtectedRoute />}>
+        <Route
+          path="/dashboard"
+          element={
+            <main className="auth-page">
+              <section className="auth-card">
+                <h1>Dashboard</h1>
+                <p>You are authenticated.</p>
+              </section>
+            </main>
+          }
+        />
+      </Route>
     </Routes>
   );
 }
