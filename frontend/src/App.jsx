@@ -1,97 +1,52 @@
-import { Link, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 
-import { useBackendHealth } from "./hooks/useBackendHealth";
-
-import RegisterPage from "./pages/RegisterPage";
-import LoginPage from "./pages/LoginPage";
+import { useAuth } from "./context/authContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-function HomePage() {
-  return (
-    <main>
-      <h1>AWS Document Management System</h1>
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 
-      <p>
-        Local development frontend is running successfully.
-      </p>
+function AppRoutes() {
+  const { isAuthenticated } = useAuth();
 
-      <Link to="/health">
-        Check Backend
-      </Link>
-
-      <p>
-        <Link to="/register">Create an account</Link>
-      </p>
-    </main>
-  );
-}
-
-function HealthPage() {
-  const { health, loading, error } = useBackendHealth();
-
-  return (
-    <main>
-      <h1>Backend Health</h1>
-
-      {loading && <p>Checking backend...</p>}
-
-      {error && (
-        <p>
-          Backend connection failed: {error}
-        </p>
-      )}
-
-      {health && (
-        <div>
-          <p>Status: {health.status}</p>
-          <p>Service: {health.service}</p>
-        </div>
-      )}
-
-      <Link to="/">
-        Back to Home
-      </Link>
-    </main>
-  );
-}
-
-function NotFoundPage() {
-  return (
-    <main>
-      <h1>404</h1>
-
-      <p>Page not found.</p>
-
-      <Link to="/">
-        Back to Home
-      </Link>
-    </main>
-  );
-}
-
-function App() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/health" element={<HealthPage />} />
-      <Route path="*" element={<NotFoundPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/login" element={<LoginPage />} />
+      {/* Public routes */}
+      <Route
+        path="/"
+        element={
+          <Navigate
+            to={isAuthenticated ? "/dashboard" : "/login"}
+            replace
+          />
+        }
+      />
+
+      <Route
+        path="/login"
+        element={
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />
+        }
+      />
+
+      <Route
+        path="/register"
+        element={
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <RegisterPage />
+        }
+      />
+
+      {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
         <Route
           path="/dashboard"
-          element={
-            <main className="auth-page">
-              <section className="auth-card">
-                <h1>Dashboard</h1>
-                <p>You are authenticated.</p>
-              </section>
-            </main>
-          }
+          element={<h1>Dashboard placeholder</h1>}
         />
       </Route>
+
+      <Route path="*" element={<h1>404 - Page not found</h1>} />
     </Routes>
   );
 }
 
-export default App;
+export default AppRoutes;
