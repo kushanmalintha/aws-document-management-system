@@ -1,0 +1,145 @@
+
+.documents-page {
+  width: 100%;
+  min-width: 0;
+}
+
+.documents-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.documents-page__header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.documents-page__header p {
+  margin: 8px 0 0;
+  color: #64748b;
+}
+
+.documents-page__count {
+  flex-shrink: 0;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.documents-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.documents-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.documents-table th,
+.documents-table td {
+  padding: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+}
+
+.documents-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.documents-table td {
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.documents-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.documents-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.documents-table__name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 180px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.documents-table__file-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.documents-state {
+  padding: 36px 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.documents-state h2 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+}
+
+.documents-state p {
+  color: #64748b;
+}
+
+.documents-state--error {
+  border-color: #fecaca;
+  background: #fffafa;
+}
+
+.documents-state--error p {
+  color: #b91c1c;
+}
+
+.documents-state button {
+  padding: 9px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.documents-state button:hover {
+  background: #f1f5f9;
+}
+
+@media (max-width: 640px) {
+  .documents-page__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .documents-table th,
+  .documents-table td {
+    padding: 12px;
+  }
+}

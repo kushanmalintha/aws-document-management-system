@@ -5,6 +5,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
+import DocumentsPage from "./pages/DocumentsPage";
 
 function ComingSoonPage({ title }) {
   return (
@@ -26,10 +27,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route
-            path="/documents"
-            element={<ComingSoonPage title="Documents" />}
-          />
+          <Route path="documents" element={<DocumentsPage />} />  
           <Route
             path="/folders"
             element={<ComingSoonPage title="Folders" />}
