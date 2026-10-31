@@ -2,6 +2,8 @@ import { Link, Route, Routes } from "react-router-dom";
 
 import { useBackendHealth } from "./hooks/useBackendHealth";
 
+import RegisterPage from "./pages/RegisterPage";
+
 function HomePage() {
   return (
     <main>
@@ -14,6 +16,10 @@ function HomePage() {
       <Link to="/health">
         Check Backend
       </Link>
+
+      <p>
+        <Link to="/register">Create an account</Link>
+      </p>
     </main>
   );
 }
@@ -67,6 +73,7 @@ function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/health" element={<HealthPage />} />
       <Route path="*" element={<NotFoundPage />} />
+      <Route path="/register" element={<RegisterPage />} />
     </Routes>
   );
 }
