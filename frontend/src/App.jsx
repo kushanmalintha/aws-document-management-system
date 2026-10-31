@@ -1,52 +1,53 @@
+
 import { Navigate, Route, Routes } from "react-router-dom";
-
-import { useAuth } from "./context/authContext";
+import AppLayout from "./components/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
-
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 
-function AppRoutes() {
-  const { isAuthenticated } = useAuth();
-
+function ComingSoonPage({ title }) {
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route
-        path="/"
-        element={
-          <Navigate
-            to={isAuthenticated ? "/dashboard" : "/login"}
-            replace
-          />
-        }
-      />
-
-      <Route
-        path="/login"
-        element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />
-        }
-      />
-
-      <Route
-        path="/register"
-        element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <RegisterPage />
-        }
-      />
-
-      {/* Protected routes */}
-      <Route element={<ProtectedRoute />}>
-        <Route
-          path="/dashboard"
-          element={<h1>Dashboard placeholder</h1>}
-        />
-      </Route>
-
-      <Route path="*" element={<h1>404 - Page not found</h1>} />
-    </Routes>
+    <section>
+      <h1>{title}</h1>
+      <p>This section will be implemented in a later task.</p>
+    </section>
   );
 }
 
-export default AppRoutes;
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route
+            path="/dashboard"
+            element={<ComingSoonPage title="Dashboard" />}
+          />
+          <Route
+            path="/documents"
+            element={<ComingSoonPage title="Documents" />}
+          />
+          <Route
+            path="/folders"
+            element={<ComingSoonPage title="Folders" />}
+          />
+          <Route
+            path="/activities"
+            element={<ComingSoonPage title="Activity" />}
+          />
+          <Route
+            path="/profile"
+            element={<ComingSoonPage title="Profile" />}
+          />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
+  );
+}
