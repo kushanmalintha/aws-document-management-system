@@ -114,10 +114,14 @@ describe("documentService", () => {
       type: "application/pdf",
     });
     const updatedDocument = { id: "doc-1", current_version: 2 };
-    api.post.mockResolvedValue({ data: updatedDocument });
+    const onProgress = vi.fn();
+    api.post.mockImplementation(async (_path, _formData, config) => {
+      config.onUploadProgress({ loaded: 3, total: 4 });
+      return { data: updatedDocument };
+    });
 
     await expect(
-      uploadDocumentVersion("doc-1", file),
+      uploadDocumentVersion("doc-1", file, onProgress),
     ).resolves.toEqual(updatedDocument);
 
     expect(api.post).toHaveBeenCalledWith(
@@ -126,6 +130,7 @@ describe("documentService", () => {
       expect.objectContaining({ onUploadProgress: expect.any(Function) }),
     );
     expect(api.post.mock.calls[0][1].get("file")).toBe(file);
+    expect(onProgress).toHaveBeenCalledWith(75);
   });
 
   it("returns Blob data from current and version-specific downloads", async () => {

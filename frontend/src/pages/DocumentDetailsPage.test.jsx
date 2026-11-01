@@ -188,6 +188,20 @@ describe("DocumentDetailsPage", () => {
     expect(clickedDownloads).toContain("report.pdf");
   });
 
+  it("shows an error when a historical version download fails", async () => {
+    downloadDocumentVersion.mockRejectedValue(
+      new Error("Document version not found."),
+    );
+    renderDetails();
+    await screen.findByText("checksum-two");
+
+    fireEvent.click(screen.getByRole("button", { name: "Download version 1" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Document version not found.",
+    );
+  });
+
   it("uploads a same-extension version and refreshes version history", async () => {
     getDocumentVersions
       .mockResolvedValueOnce([versionOne, versionTwo])
@@ -238,5 +252,40 @@ describe("DocumentDetailsPage", () => {
       "The new version must use the same file extension",
     );
     expect(uploadDocumentVersion).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["empty.pdf", 0, "Empty files cannot be uploaded."],
+    ["too-large.pdf", 10 * 1024 * 1024 + 1, "The file must be 10 MiB or smaller."],
+  ])("rejects invalid version file %s before uploading", async (name, size, message) => {
+    const { container } = renderDetails();
+    await screen.findByText("checksum-two");
+    const file = new File([new Uint8Array(size)], name);
+
+    fireEvent.change(container.querySelector("#document-version-file"), {
+      target: { files: [file] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Upload version" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(message);
+    expect(uploadDocumentVersion).not.toHaveBeenCalled();
+  });
+
+  it("displays an API failure when uploading a valid new version", async () => {
+    uploadDocumentVersion.mockRejectedValue(new Error("Version upload failed."));
+    const { container } = renderDetails();
+    await screen.findByText("checksum-two");
+    const file = new File(["revision"], "revision.pdf", {
+      type: "application/pdf",
+    });
+
+    fireEvent.change(container.querySelector("#document-version-file"), {
+      target: { files: [file] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Upload version" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Version upload failed.",
+    );
   });
 });
