@@ -25,3 +25,7 @@ export async function renameFolder(folderId, name) {
   const response = await api.put(`/api/folders/${folderId}`, { name });
   return response.data;
 }
+
+export async function deleteFolder(folderId) {
+  await api.delete(`/api/folders/${folderId}`);
+}

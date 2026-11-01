@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { getApiErrorMessage } from "../services/api";
 import {
   createFolder,
+  deleteFolder,
   getFolders,
   renameFolder,
 } from "../services/folderService";
@@ -11,6 +12,34 @@ import "../styles/folders.css";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function getFolderSubtreeIds(folderId, folders) {
+  const childIdsByParent = new Map();
+
+  folders.forEach((folder) => {
+    if (!folder.parent_folder_id) return;
+
+    const childIds = childIdsByParent.get(folder.parent_folder_id) ?? [];
+    childIds.push(folder.id);
+    childIdsByParent.set(folder.parent_folder_id, childIds);
+  });
+
+  const subtreeIds = new Set([folderId]);
+  const foldersToVisit = [folderId];
+
+  while (foldersToVisit.length > 0) {
+    const currentFolderId = foldersToVisit.pop();
+
+    childIdsByParent.get(currentFolderId)?.forEach((childId) => {
+      if (!subtreeIds.has(childId)) {
+        subtreeIds.add(childId);
+        foldersToVisit.push(childId);
+      }
+    });
+  }
+
+  return subtreeIds;
+}
 
 function FolderBrowserPage() {
   const { id } = useParams();
@@ -30,6 +59,9 @@ function FolderBrowserPage() {
   const [renaming, setRenaming] = useState(false);
   const [renameError, setRenameError] = useState("");
   const [renameSuccess, setRenameSuccess] = useState("");
+  const [deletingFolderId, setDeletingFolderId] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteSuccess, setDeleteSuccess] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -196,6 +228,55 @@ function FolderBrowserPage() {
     }
   }
 
+  async function handleDeleteFolder(folder) {
+    const subtreeIds = getFolderSubtreeIds(folder.id, folders);
+    const nestedFolderCount = subtreeIds.size - 1;
+    const nestedFolderText = nestedFolderCount
+      ? ` and ${nestedFolderCount} nested ${nestedFolderCount === 1 ? "folder" : "folders"}`
+      : "";
+
+    if (
+      !window.confirm(
+        `Permanently delete "${folder.name}"${nestedFolderText}? Documents in these folders will be kept and moved out of folders.`,
+      )
+    ) {
+      return;
+    }
+
+    setDeleteError("");
+    setDeleteSuccess("");
+    setDeletingFolderId(folder.id);
+
+    try {
+      await deleteFolder(folder.id);
+      setLoadState((currentState) =>
+        currentState.key === routeKey
+          ? {
+              ...currentState,
+              folders: currentState.folders.filter(
+                (item) => !subtreeIds.has(item.id),
+              ),
+            }
+          : currentState,
+      );
+      setRenameSuccess("");
+      setDeleteSuccess(
+        nestedFolderCount > 0
+          ? `Folder "${folder.name}" and ${nestedFolderCount} nested ${nestedFolderCount === 1 ? "folder" : "folders"} deleted. Documents were kept and moved out of folders.`
+          : `Folder "${folder.name}" deleted. Documents were kept and moved out of folders.`,
+      );
+    } catch (requestError) {
+      setDeleteError(
+        getApiErrorMessage(
+          requestError,
+          `Unable to delete "${folder.name}". Please try again.`,
+        ),
+      );
+    } finally {
+      setDeletingFolderId(null);
+    }
+  }
+
   return (
     <section className="folder-browser">
       <nav className="folder-breadcrumbs" aria-label="Folder breadcrumbs">
@@ -249,7 +330,7 @@ function FolderBrowserPage() {
               value={folderName}
               maxLength={255}
               autoComplete="off"
-              disabled={creating}
+              disabled={creating || deletingFolderId !== null}
               onChange={(event) => {
                 setFolderName(event.target.value);
                 setCreateError("");
@@ -257,7 +338,10 @@ function FolderBrowserPage() {
               }}
             />
           </div>
-          <button type="submit" disabled={creating || !folderName.trim()}>
+          <button
+            type="submit"
+            disabled={creating || deletingFolderId !== null || !folderName.trim()}
+          >
             {creating ? "Creating…" : "Create folder"}
           </button>
           {createError && (
@@ -297,6 +381,18 @@ function FolderBrowserPage() {
         </div>
       )}
 
+      {deleteError && (
+        <p className="folder-create__message folder-create__message--error" role="alert">
+          {deleteError}
+        </p>
+      )}
+
+      {deleteSuccess && (
+        <p className="folder-create__message folder-create__message--success" role="status">
+          {deleteSuccess}
+        </p>
+      )}
+
       {!loading && !pageError && childFolders.length > 0 && (
         <ul className="folder-list" aria-label="Folders">
           {childFolders.map((folder) => {
@@ -329,14 +425,21 @@ function FolderBrowserPage() {
                           }}
                         />
                       </div>
-                      <button type="submit" disabled={renaming || !renameName.trim()}>
+                      <button
+                        type="submit"
+                        disabled={
+                          renaming ||
+                          deletingFolderId !== null ||
+                          !renameName.trim()
+                        }
+                      >
                         {renaming ? "Saving…" : "Save"}
                       </button>
                       <button
                         className="folder-rename__cancel"
                         type="button"
                         onClick={cancelRename}
-                        disabled={renaming}
+                        disabled={renaming || deletingFolderId !== null}
                       >
                         Cancel
                       </button>
@@ -360,10 +463,21 @@ function FolderBrowserPage() {
                         className="folder-list__rename"
                         type="button"
                         onClick={() => startRename(folder)}
-                        disabled={renaming}
+                        disabled={renaming || deletingFolderId !== null}
                         aria-label={`Rename ${folder.name}`}
                       >
                         Rename
+                      </button>
+                      <button
+                        className="folder-list__delete"
+                        type="button"
+                        onClick={() => handleDeleteFolder(folder)}
+                        disabled={creating || renaming || deletingFolderId !== null}
+                        aria-label={`Delete folder ${folder.name}`}
+                      >
+                        {deletingFolderId === folder.id
+                          ? "Deleting…"
+                          : "Delete"}
                       </button>
                     </>
                   )}

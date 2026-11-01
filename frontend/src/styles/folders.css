@@ -204,6 +204,7 @@
 }
 
 .folder-list__rename,
+.folder-list__delete,
 .folder-rename button {
   align-self: center;
   min-height: 40px;
@@ -218,17 +219,29 @@
 }
 
 .folder-list__rename:hover:not(:disabled),
+.folder-list__delete:hover:not(:disabled),
 .folder-rename button:hover:not(:disabled) {
   background: #f1f5f9;
 }
 
+.folder-list__delete {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.folder-list__delete:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
 .folder-list__rename:disabled,
+.folder-list__delete:disabled,
 .folder-rename button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
 
 .folder-list__rename:focus-visible,
+.folder-list__delete:focus-visible,
 .folder-rename button:focus-visible,
 .folder-rename input:focus-visible {
   outline: 3px solid #93c5fd;
