@@ -214,13 +214,13 @@ describe("DocumentDetailsPage", () => {
       ...documentFixture,
       current_version: 3,
     });
-    const { container } = renderDetails();
+    renderDetails();
     await screen.findByText("checksum-two");
     const file = new File(["revision"], "revision.pdf", {
       type: "application/pdf",
     });
 
-    fireEvent.change(container.querySelector("#document-version-file"), {
+    fireEvent.change(screen.getByLabelText("New version file"), {
       target: { files: [file] },
     });
     fireEvent.click(screen.getByRole("button", { name: "Upload version" }));
@@ -239,11 +239,11 @@ describe("DocumentDetailsPage", () => {
   });
 
   it("rejects a new version with a different extension", async () => {
-    const { container } = renderDetails();
+    renderDetails();
     await screen.findByText("checksum-two");
     const file = new File(["text"], "revision.txt", { type: "text/plain" });
 
-    fireEvent.change(container.querySelector("#document-version-file"), {
+    fireEvent.change(screen.getByLabelText("New version file"), {
       target: { files: [file] },
     });
     fireEvent.click(screen.getByRole("button", { name: "Upload version" }));
@@ -258,11 +258,11 @@ describe("DocumentDetailsPage", () => {
     ["empty.pdf", 0, "Empty files cannot be uploaded."],
     ["too-large.pdf", 10 * 1024 * 1024 + 1, "The file must be 10 MiB or smaller."],
   ])("rejects invalid version file %s before uploading", async (name, size, message) => {
-    const { container } = renderDetails();
+    renderDetails();
     await screen.findByText("checksum-two");
     const file = new File([new Uint8Array(size)], name);
 
-    fireEvent.change(container.querySelector("#document-version-file"), {
+    fireEvent.change(screen.getByLabelText("New version file"), {
       target: { files: [file] },
     });
     fireEvent.click(screen.getByRole("button", { name: "Upload version" }));
@@ -273,13 +273,13 @@ describe("DocumentDetailsPage", () => {
 
   it("displays an API failure when uploading a valid new version", async () => {
     uploadDocumentVersion.mockRejectedValue(new Error("Version upload failed."));
-    const { container } = renderDetails();
+    renderDetails();
     await screen.findByText("checksum-two");
     const file = new File(["revision"], "revision.pdf", {
       type: "application/pdf",
     });
 
-    fireEvent.change(container.querySelector("#document-version-file"), {
+    fireEvent.change(screen.getByLabelText("New version file"), {
       target: { files: [file] },
     });
     fireEvent.click(screen.getByRole("button", { name: "Upload version" }));

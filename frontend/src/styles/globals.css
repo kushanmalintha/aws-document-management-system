@@ -32,3 +32,8 @@ body {
 a {
   color: inherit;
 }
+
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}

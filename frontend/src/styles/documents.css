@@ -181,11 +181,11 @@
   font-size: 0.9rem;
 }
 
-.documents-search input:focus,
-.documents-control select:focus {
+.documents-search input:focus-visible,
+.documents-control select:focus-visible {
   border-color: #2563eb;
-  outline: 2px solid #bfdbfe;
-  outline-offset: 1px;
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
 }
 
 .documents-clear-button {
@@ -252,6 +252,13 @@
   flex: 1 1 240px;
   min-width: 0;
   font: inherit;
+}
+
+.document-upload__file-label {
+  flex: 0 0 auto;
+  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 .document-upload__controls button {

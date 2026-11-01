@@ -85,7 +85,7 @@
 .app-logout-button:focus-visible,
 .app-nav-link:focus-visible,
 .app-brand:focus-visible {
-  outline: 3px solid #93c5fd;
+  outline: 3px solid #2563eb;
   outline-offset: 3px;
 }
 
@@ -106,7 +106,7 @@
 
 .app-sidebar-heading {
   margin: 0 12px 14px;
-  color: #94a3b8;
+  color: #64748b;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;

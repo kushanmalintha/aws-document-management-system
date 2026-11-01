@@ -63,9 +63,10 @@
   font: inherit;
 }
 
-.profile-field input:focus {
+.profile-field input:focus-visible {
   border-color: #2563eb;
-  outline: 3px solid rgb(37 99 235 / 15%);
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
 }
 
 .profile-field input[readonly] {

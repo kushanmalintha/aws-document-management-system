@@ -16,7 +16,11 @@ export default function AppLayout() {
   const navigate = useNavigate();
 
   async function handleLogout() {
-    await logout();
+    try {
+      await logout();
+    } catch {
+      // AuthContext clears the local session even when the API request fails.
+    }
     navigate("/login", { replace: true });
   }
 

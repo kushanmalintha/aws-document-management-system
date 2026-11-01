@@ -51,6 +51,7 @@ function FolderBrowserPage() {
     folders: [],
     error: "",
   });
+  const [retryCount, setRetryCount] = useState(0);
   const [folderName, setFolderName] = useState("");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
@@ -93,7 +94,7 @@ function FolderBrowserPage() {
     return () => {
       active = false;
     };
-  }, [invalidId, routeKey]);
+  }, [invalidId, retryCount, routeKey]);
 
   const loading = !invalidId && loadState.key !== routeKey;
   const error = loadState.key === routeKey ? loadState.error : "";
@@ -367,7 +368,19 @@ function FolderBrowserPage() {
       {!loading && pageError && (
         <div className="folder-browser__state folder-browser__state--error" role="alert">
           <p>{pageError}</p>
-          <Link to="/folders">Return to all folders</Link>
+          {error ? (
+            <button
+              type="button"
+              onClick={() => {
+                setLoadState({ key: null, folders: [], error: "" });
+                setRetryCount((count) => count + 1);
+              }}
+            >
+              Try again
+            </button>
+          ) : (
+            <Link to="/folders">Return to all folders</Link>
+          )}
         </div>
       )}
 

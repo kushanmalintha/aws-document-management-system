@@ -378,15 +378,19 @@ function DocumentsPage({ folderId, folderName, unfiledOnly = false } = {}) {
                 ? "Upload without a folder"
                 : "Upload a document"}
           </h2>
-          <p>Choose a supported file up to 10 MiB.</p>
+          <p id="document-upload-help">Choose a supported file up to 10 MiB.</p>
         </div>
 
         <div className="document-upload__controls">
+          <label className="document-upload__file-label" htmlFor="document-file">
+            Document file
+          </label>
           <input
             ref={fileInputRef}
             id="document-file"
             type="file"
             accept={ALLOWED_EXTENSIONS.join(",")}
+            aria-describedby="document-upload-help"
             disabled={isUploading}
             onChange={(event) => {
               setSelectedFile(event.target.files?.[0] ?? null);

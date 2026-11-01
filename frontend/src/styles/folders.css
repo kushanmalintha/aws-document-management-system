@@ -93,10 +93,10 @@
   font: inherit;
 }
 
-.folder-create__field input:focus {
+.folder-create__field input:focus-visible {
   border-color: #2563eb;
-  outline: 2px solid #bfdbfe;
-  outline-offset: 1px;
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
 }
 
 .folder-create button {
@@ -178,7 +178,7 @@
 
 .folder-list__item:focus-visible,
 .folder-breadcrumbs a:focus-visible {
-  outline: 3px solid #93c5fd;
+  outline: 3px solid #2563eb;
   outline-offset: 2px;
 }
 
@@ -248,7 +248,7 @@
 .folder-list__delete:focus-visible,
 .folder-rename button:focus-visible,
 .folder-rename input:focus-visible {
-  outline: 3px solid #93c5fd;
+  outline: 3px solid #2563eb;
   outline-offset: 2px;
 }
 

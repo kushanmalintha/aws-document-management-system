@@ -223,13 +223,17 @@ describe("FolderBrowserPage", () => {
   });
 
   it("displays a folder loading error", async () => {
-    getFolders.mockRejectedValue(new Error("Unable to load folders."));
+    getFolders
+      .mockRejectedValueOnce(new Error("Unable to load folders."))
+      .mockResolvedValueOnce(folders);
     renderFolderBrowser();
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Unable to load folders.",
     );
-    expect(screen.getByRole("link", { name: "Return to all folders" }))
-      .toHaveAttribute("href", "/folders");
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(await screen.findByRole("link", { name: /Reports/ }))
+      .toHaveAttribute("href", `/folders/${rootFolderId}`);
+    expect(getFolders).toHaveBeenCalledTimes(2);
   });
 });

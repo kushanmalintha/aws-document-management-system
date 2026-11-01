@@ -383,15 +383,24 @@ function DocumentDetailsPage() {
           >
             <div className="document-upload__heading">
               <h2>Upload a new version</h2>
-              <p>Choose a file with the same extension, up to 10 MiB.</p>
+              <p id="document-version-upload-help">
+                Choose a file with the same extension, up to 10 MiB.
+              </p>
             </div>
 
             <div className="document-upload__controls">
+              <label
+                className="document-upload__file-label"
+                htmlFor="document-version-file"
+              >
+                New version file
+              </label>
               <input
                 ref={versionFileInputRef}
                 id="document-version-file"
                 type="file"
                 accept={getFileExtension(document.name) || undefined}
+                aria-describedby="document-version-upload-help"
                 disabled={uploadingVersion}
                 onChange={(inputEvent) => {
                   setVersionFile(inputEvent.target.files?.[0] ?? null);

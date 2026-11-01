@@ -137,7 +137,7 @@ describe("DocumentsPage", () => {
   });
 
   it("uploads a selected document into its current folder and refreshes the list", async () => {
-    const { container } = renderDocumentsPage({
+    renderDocumentsPage({
       folderId: "folder-1",
       folderName: "Reports",
     });
@@ -145,7 +145,7 @@ describe("DocumentsPage", () => {
       type: "application/pdf",
     });
 
-    fireEvent.change(container.querySelector("#document-file"), {
+    fireEvent.change(screen.getByLabelText("Document file"), {
       target: { files: [file] },
     });
     fireEvent.click(screen.getByRole("button", { name: "Upload document" }));
@@ -168,10 +168,10 @@ describe("DocumentsPage", () => {
     ["empty.pdf", 0, "Empty files cannot be uploaded."],
     ["large.pdf", 10 * 1024 * 1024 + 1, "The file must be 10 MiB or smaller."],
   ])("rejects invalid upload %s before calling the service", async (name, size, message) => {
-    const { container } = renderDocumentsPage();
+    renderDocumentsPage();
     const file = new File([new Uint8Array(size)], name);
 
-    fireEvent.change(container.querySelector("#document-file"), {
+    fireEvent.change(screen.getByLabelText("Document file"), {
       target: { files: [file] },
     });
     fireEvent.click(screen.getByRole("button", { name: "Upload document" }));
