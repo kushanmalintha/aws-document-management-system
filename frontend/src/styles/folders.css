@@ -53,6 +53,10 @@
   font-size: 0.9rem;
 }
 
+.folder-browser__documents {
+  margin-top: 36px;
+}
+
 .folder-create {
   display: flex;
   align-items: flex-end;

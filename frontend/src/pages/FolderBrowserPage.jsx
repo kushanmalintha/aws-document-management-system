@@ -490,12 +490,14 @@ function FolderBrowserPage() {
       )}
 
       {!loading && !pageError && (
-        <DocumentsPage
-          key={id ?? "root"}
-          folderId={id}
-          folderName={currentFolder?.name}
-          unfiledOnly={!id}
-        />
+        <div className="folder-browser__documents">
+          <DocumentsPage
+            key={id ?? "root"}
+            folderId={id}
+            folderName={currentFolder?.name}
+            unfiledOnly={!id}
+          />
+        </div>
       )}
 
       {renameSuccess && (
