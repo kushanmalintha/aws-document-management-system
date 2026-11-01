@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 
 import { getApiErrorMessage } from "../services/api";
 import { downloadDocument, getDocument } from "../services/documentService";
@@ -7,6 +7,8 @@ import "../styles/documents.css";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const FOLDER_RETURN_PATH_PATTERN =
+  /^\/folders(?:\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?$/i;
 
 function formatFileSize(bytes) {
   if (bytes === null || bytes === undefined || !Number.isFinite(Number(bytes))) {
@@ -34,6 +36,11 @@ function formatDate(value) {
 
 function DocumentDetailsPage() {
   const { id } = useParams();
+  const location = useLocation();
+  const requestedReturnTo = location.state?.returnTo;
+  const returnTo = FOLDER_RETURN_PATH_PATTERN.test(requestedReturnTo ?? "")
+    ? requestedReturnTo
+    : "/documents";
   const [loadState, setLoadState] = useState({
     id: null,
     status: "loading",
@@ -108,8 +115,8 @@ function DocumentDetailsPage() {
 
   return (
     <section className="documents-page document-details">
-      <Link className="document-details__back" to="/documents">
-        Back to documents
+      <Link className="document-details__back" to={returnTo}>
+        {returnTo.startsWith("/folders") ? "Back to folder" : "Back to documents"}
       </Link>
 
       {invalidId && (

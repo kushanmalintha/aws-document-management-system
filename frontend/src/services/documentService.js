@@ -5,6 +5,8 @@ export async function getDocuments({
   contentType = "",
   sortBy = "created_at",
   sortOrder = "desc",
+  folderId,
+  unfiledOnly = false,
 } = {}) {
   const params = {
     sort_by: sortBy,
@@ -19,28 +21,31 @@ export async function getDocuments({
     params.content_type = contentType;
   }
 
+  if (folderId) {
+    params.folder_id = folderId;
+  }
+
   const response = await api.get("/api/documents", { params });
   const data = response.data;
+  let documents;
 
   if (Array.isArray(data)) {
-    return data;
+    documents = data;
+  } else if (Array.isArray(data?.documents)) {
+    documents = data.documents;
+  } else if (Array.isArray(data?.items)) {
+    documents = data.items;
+  } else if (Array.isArray(data?.results)) {
+    documents = data.results;
+  } else {
+    throw new Error(
+      "The document list could not be loaded because the response format was unexpected.",
+    );
   }
 
-  if (Array.isArray(data?.documents)) {
-    return data.documents;
-  }
-
-  if (Array.isArray(data?.items)) {
-    return data.items;
-  }
-
-  if (Array.isArray(data?.results)) {
-    return data.results;
-  }
-
-  throw new Error(
-    "The document list could not be loaded because the response format was unexpected.",
-  );
+  return unfiledOnly
+    ? documents.filter((document) => !document.folder_id)
+    : documents;
 }
 
 export async function getDocument(documentId) {
@@ -52,9 +57,13 @@ export async function deleteDocument(documentId) {
   await api.delete(`/api/documents/${documentId}`);
 }
 
-export async function uploadDocument(file, onProgress) {
+export async function uploadDocument(file, onProgress, folderId) {
   const formData = new FormData();
   formData.append("file", file);
+
+  if (folderId) {
+    formData.append("folder_id", folderId);
+  }
 
   const response = await api.post("/api/documents/upload", formData, {
     onUploadProgress: (event) => {

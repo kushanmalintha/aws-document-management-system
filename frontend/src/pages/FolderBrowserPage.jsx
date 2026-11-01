@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { getApiErrorMessage } from "../services/api";
+import DocumentsPage from "./DocumentsPage";
 import {
   createFolder,
   deleteFolder,
@@ -486,6 +487,15 @@ function FolderBrowserPage() {
             );
           })}
         </ul>
+      )}
+
+      {!loading && !pageError && (
+        <DocumentsPage
+          key={id ?? "root"}
+          folderId={id}
+          folderName={currentFolder?.name}
+          unfiledOnly={!id}
+        />
       )}
 
       {renameSuccess && (

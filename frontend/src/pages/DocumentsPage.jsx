@@ -83,7 +83,7 @@ function getDocumentName(document) {
   return document.name || document.filename || "Untitled document";
 }
 
-function DocumentsPage() {
+function DocumentsPage({ folderId, folderName, unfiledOnly = false } = {}) {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -118,6 +118,8 @@ function DocumentsPage() {
         contentType,
         sortBy,
         sortOrder,
+        folderId,
+        unfiledOnly,
       });
 
       if (requestId === requestIdRef.current) {
@@ -138,12 +140,19 @@ function DocumentsPage() {
         setLoading(false);
       }
     }
-  }, [search, contentType, sortBy, sortOrder]);
+  }, [search, contentType, sortBy, sortOrder, folderId, unfiledOnly]);
 
   useEffect(() => {
     const requestId = ++requestIdRef.current;
 
-    getDocuments({ search, contentType, sortBy, sortOrder })
+    getDocuments({
+      search,
+      contentType,
+      sortBy,
+      sortOrder,
+      folderId,
+      unfiledOnly,
+    })
       .then((result) => {
         if (requestId === requestIdRef.current) {
           setDocuments(result);
@@ -169,7 +178,7 @@ function DocumentsPage() {
     return () => {
       requestIdRef.current += 1;
     };
-  }, [search, contentType, sortBy, sortOrder, retryCount]);
+  }, [search, contentType, sortBy, sortOrder, retryCount, folderId, unfiledOnly]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -214,7 +223,7 @@ function DocumentsPage() {
     setUploadProgress(0);
 
     try {
-      await uploadDocument(selectedFile, setUploadProgress);
+      await uploadDocument(selectedFile, setUploadProgress, folderId);
       setUploadSuccess(`"${selectedFile.name}" uploaded successfully.`);
       setSelectedFile(null);
       setUploadProgress(0);
@@ -331,13 +340,28 @@ function DocumentsPage() {
     contentType !== "" ||
     sortBy !== "created_at" ||
     sortOrder !== "desc";
+  const documentsHeading = folderName
+    ? `Documents in ${folderName}`
+    : unfiledOnly
+      ? "Unfiled documents"
+      : "Documents";
+  const documentsDescription = folderName
+    ? `Files stored in ${folderName}.`
+    : unfiledOnly
+      ? "Documents that are not assigned to a folder."
+      : "Search and organise your stored documents.";
+  const documentsReturnPath = folderName || unfiledOnly
+    ? folderId
+      ? `/folders/${folderId}`
+      : "/folders"
+    : "/documents";
 
   return (
     <section className="documents-page">
       <div className="documents-page__header">
         <div>
-          <h1>Documents</h1>
-          <p>Search and organise your stored documents.</p>
+          <h1>{documentsHeading}</h1>
+          <p>{documentsDescription}</p>
         </div>
 
         <span className="documents-page__count">
@@ -347,7 +371,13 @@ function DocumentsPage() {
 
       <form className="document-upload" onSubmit={handleUpload}>
         <div className="document-upload__heading">
-          <h2>Upload a document</h2>
+          <h2>
+            {folderName
+              ? "Upload to this folder"
+              : unfiledOnly
+                ? "Upload without a folder"
+                : "Upload a document"}
+          </h2>
           <p>Choose a supported file up to 10 MiB.</p>
         </div>
 
@@ -568,6 +598,7 @@ function DocumentsPage() {
                     <Link
                       className="documents-clear-button documents-details-link"
                       to={`/documents/${document.id}`}
+                      state={{ returnTo: documentsReturnPath }}
                       aria-label={`View details for ${getDocumentName(document)}`}
                     >
                       Details
