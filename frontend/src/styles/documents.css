@@ -384,6 +384,62 @@
   color: #b91c1c;
 }
 
+.document-version-history {
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.document-version-history__header {
+  margin-bottom: 16px;
+}
+
+.document-version-history__header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.document-version-history__header p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.document-version-history__message {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.document-version-history__message--error {
+  color: #b91c1c;
+}
+
+.document-version-history__table {
+  min-width: 680px;
+}
+
+.document-version-history__current {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.document-version-history__checksum {
+  max-width: 280px;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.8rem !important;
+}
+
 @media (max-width: 640px) {
   .documents-page__header {
     align-items: flex-start;

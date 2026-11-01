@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 
 import { getApiErrorMessage } from "../services/api";
-import { downloadDocument, getDocument } from "../services/documentService";
+import {
+  downloadDocument,
+  getDocument,
+  getDocumentVersions,
+} from "../services/documentService";
 import "../styles/documents.css";
 
 const UUID_PATTERN =
@@ -47,6 +51,11 @@ function DocumentDetailsPage() {
     document: null,
     error: "",
   });
+  const [versionLoadState, setVersionLoadState] = useState({
+    id: null,
+    versions: [],
+    error: "",
+  });
   const [downloadError, setDownloadError] = useState("");
   const [downloading, setDownloading] = useState(false);
   const invalidId = !UUID_PATTERN.test(id ?? "");
@@ -85,9 +94,48 @@ function DocumentDetailsPage() {
     };
   }, [id, invalidId]);
 
+  useEffect(() => {
+    let active = true;
+
+    if (invalidId) {
+      return () => {
+        active = false;
+      };
+    }
+
+    getDocumentVersions(id)
+      .then((versions) => {
+        if (active) setVersionLoadState({ id, versions, error: "" });
+      })
+      .catch((requestError) => {
+        if (active) {
+          setVersionLoadState({
+            id,
+            versions: [],
+            error: getApiErrorMessage(
+              requestError,
+              "Unable to load version history. Please try again.",
+            ),
+          });
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [id, invalidId]);
+
   const loading = !invalidId && loadState.id !== id;
   const error = loadState.id === id ? loadState.error : "";
   const document = loadState.id === id ? loadState.document : null;
+  const versionsLoading = !invalidId && versionLoadState.id !== id;
+  const versionsError =
+    versionLoadState.id === id ? versionLoadState.error : "";
+  const versions =
+    versionLoadState.id === id ? versionLoadState.versions : [];
+  const orderedVersions = versions
+    .slice()
+    .sort((first, second) => second.version_number - first.version_number);
 
   async function handleDownload() {
     setDownloadError("");
@@ -196,6 +244,73 @@ function DocumentDetailsPage() {
               <dd>{formatDate(document.updated_at)}</dd>
             </div>
           </dl>
+
+          <section
+            className="document-version-history"
+            aria-labelledby="document-version-history-title"
+          >
+            <div className="document-version-history__header">
+              <div>
+                <h2 id="document-version-history-title">Version history</h2>
+                <p>Versions of this document, newest first.</p>
+              </div>
+            </div>
+
+            {versionsLoading && (
+              <p className="document-version-history__message" role="status">
+                Loading version history…
+              </p>
+            )}
+
+            {!versionsLoading && versionsError && (
+              <p
+                className="document-version-history__message document-version-history__message--error"
+                role="alert"
+              >
+                {versionsError}
+              </p>
+            )}
+
+            {!versionsLoading && !versionsError && versions.length === 0 && (
+              <p className="document-version-history__message">
+                No version history is available for this document.
+              </p>
+            )}
+
+            {!versionsLoading && !versionsError && versions.length > 0 && (
+              <div className="documents-table-wrapper document-version-history__table-wrapper">
+                <table className="documents-table document-version-history__table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Version</th>
+                      <th scope="col">File size</th>
+                      <th scope="col">Uploaded</th>
+                      <th scope="col">Checksum</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orderedVersions.map((version) => (
+                      <tr key={version.id}>
+                        <td>
+                          <span>Version {version.version_number}</span>
+                          {version.version_number === document.current_version && (
+                            <span className="document-version-history__current">
+                              Current
+                            </span>
+                          )}
+                        </td>
+                        <td>{formatFileSize(version.size_bytes)}</td>
+                        <td>{formatDate(version.created_at)}</td>
+                        <td className="document-version-history__checksum">
+                          {version.checksum || "Unavailable"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
         </>
       )}
     </section>

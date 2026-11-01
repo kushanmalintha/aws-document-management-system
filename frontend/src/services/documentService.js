@@ -53,6 +53,18 @@ export async function getDocument(documentId) {
   return response.data;
 }
 
+export async function getDocumentVersions(documentId) {
+  const response = await api.get(`/api/documents/${documentId}/versions`);
+
+  if (!Array.isArray(response.data)) {
+    throw new Error(
+      "The version history could not be loaded because the response format was unexpected.",
+    );
+  }
+
+  return response.data;
+}
+
 export async function deleteDocument(documentId) {
   await api.delete(`/api/documents/${documentId}`);
 }
