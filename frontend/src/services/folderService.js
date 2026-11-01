@@ -20,3 +20,8 @@ export async function createFolder(name, parentFolderId = null) {
 
   return response.data;
 }
+
+export async function renameFolder(folderId, name) {
+  const response = await api.put(`/api/folders/${folderId}`, { name });
+  return response.data;
+}
