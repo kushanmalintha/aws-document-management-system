@@ -46,6 +46,34 @@ Local document storage is implemented behind a storage abstraction so it can lat
 
 The eventual AWS architecture will progressively introduce managed AWS services.
 
+## Run the application with Docker Compose
+
+Docker Compose runs PostgreSQL, the FastAPI backend, and the built React frontend.
+The backend applies Alembic migrations when it starts. PostgreSQL data and uploaded
+documents are stored in named Docker volumes and persist when the containers stop.
+
+1. Create `.env` from `.env.example` if you do not already have a root `.env` file.
+   If one already exists, add any missing Compose variables to it without replacing
+   your existing settings. Set a local database password and a long random JWT
+   secret before starting the services.
+2. Start the application from the repository root:
+
+   ```sh
+   docker compose up --build
+   ```
+
+3. Open the frontend at `http://localhost:8080`. The backend API and interactive
+   documentation are available at `http://localhost:8000` and
+   `http://localhost:8000/docs`.
+
+The frontend proxies API and health requests to the backend, so browser requests
+use the same origin. The database is also available on `localhost:5433` by default.
+Set `FRONTEND_PORT`, `BACKEND_PORT`, and `POSTGRES_PORT` in `.env` to use different
+host ports.
+
+Stop the containers with `docker compose down`. This keeps the database and uploaded
+documents in their named volumes for the next startup.
+
 ## Core Features
 
 - User registration
