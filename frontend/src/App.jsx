@@ -8,6 +8,7 @@ import DashboardPage from "./pages/DashboardPage";
 import DocumentsPage from "./pages/DocumentsPage";
 import DocumentDetailsPage from "./pages/DocumentDetailsPage";
 import FolderBrowserPage from "./pages/FolderBrowserPage";
+import ActivityPage from "./pages/ActivityPage";
 
 function ComingSoonPage({ title }) {
   return (
@@ -33,10 +34,7 @@ export default function App() {
           <Route path="documents/:id" element={<DocumentDetailsPage />} />
           <Route path="/folders" element={<FolderBrowserPage />} />
           <Route path="/folders/:id" element={<FolderBrowserPage />} />
-          <Route
-            path="/activities"
-            element={<ComingSoonPage title="Activity" />}
-          />
+          <Route path="/activities" element={<ActivityPage />} />
           <Route
             path="/profile"
             element={<ComingSoonPage title="Profile" />}
