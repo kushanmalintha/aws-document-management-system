@@ -7,6 +7,7 @@ import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import DocumentsPage from "./pages/DocumentsPage";
 import DocumentDetailsPage from "./pages/DocumentDetailsPage";
+import FolderBrowserPage from "./pages/FolderBrowserPage";
 
 function ComingSoonPage({ title }) {
   return (
@@ -30,10 +31,8 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="documents" element={<DocumentsPage />} />  
           <Route path="documents/:id" element={<DocumentDetailsPage />} />
-          <Route
-            path="/folders"
-            element={<ComingSoonPage title="Folders" />}
-          />
+          <Route path="/folders" element={<FolderBrowserPage />} />
+          <Route path="/folders/:id" element={<FolderBrowserPage />} />
           <Route
             path="/activities"
             element={<ComingSoonPage title="Activity" />}

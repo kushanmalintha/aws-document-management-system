@@ -1,0 +1,147 @@
+.folder-browser {
+  width: 100%;
+  min-width: 0;
+}
+
+.folder-breadcrumbs {
+  margin-bottom: 20px;
+}
+
+.folder-breadcrumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.folder-breadcrumbs li + li::before {
+  margin-right: 8px;
+  color: #94a3b8;
+  content: "/";
+}
+
+.folder-breadcrumbs a {
+  color: #1d4ed8;
+}
+
+.folder-browser__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.folder-browser__header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  overflow-wrap: anywhere;
+}
+
+.folder-browser__header p {
+  margin: 8px 0 0;
+  color: #64748b;
+}
+
+.folder-browser__count {
+  flex-shrink: 0;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.folder-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.folder-list__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px 12px;
+  min-height: 72px;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #172033;
+  text-decoration: none;
+}
+
+.folder-list__item:hover {
+  border-color: #bfdbfe;
+  background: #f8fbff;
+}
+
+.folder-list__item:focus-visible,
+.folder-breadcrumbs a:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+.folder-list__icon {
+  grid-row: span 2;
+  color: #2563eb;
+  font-size: 1.5rem;
+}
+
+.folder-list__name {
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.folder-list__children {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.folder-list__open {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  color: #1d4ed8;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.folder-browser__state {
+  padding: 36px 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.folder-browser__state h2 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+}
+
+.folder-browser__state p {
+  color: #64748b;
+}
+
+.folder-browser__state--error {
+  border-color: #fecaca;
+  background: #fffafa;
+  color: #b91c1c;
+}
+
+.folder-browser__state a {
+  color: #1d4ed8;
+}
+
+@media (max-width: 640px) {
+  .folder-browser__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
