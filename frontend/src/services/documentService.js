@@ -65,6 +65,26 @@ export async function getDocumentVersions(documentId) {
   return response.data;
 }
 
+export async function uploadDocumentVersion(documentId, file, onProgress) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await api.post(
+    `/api/documents/${documentId}/versions`,
+    formData,
+    {
+      onUploadProgress: (event) => {
+        if (event.total && onProgress) {
+          const percentage = Math.round((event.loaded / event.total) * 100);
+          onProgress(percentage);
+        }
+      },
+    },
+  );
+
+  return response.data;
+}
+
 export async function deleteDocument(documentId) {
   await api.delete(`/api/documents/${documentId}`);
 }

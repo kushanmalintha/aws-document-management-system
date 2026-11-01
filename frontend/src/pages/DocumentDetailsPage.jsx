@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 
 import { getApiErrorMessage } from "../services/api";
@@ -6,6 +6,7 @@ import {
   downloadDocument,
   getDocument,
   getDocumentVersions,
+  uploadDocumentVersion,
 } from "../services/documentService";
 import "../styles/documents.css";
 
@@ -38,6 +39,11 @@ function formatDate(value) {
   }).format(date);
 }
 
+function getFileExtension(fileName = "") {
+  const lastDotIndex = fileName.lastIndexOf(".");
+  return lastDotIndex > 0 ? fileName.slice(lastDotIndex).toLowerCase() : "";
+}
+
 function DocumentDetailsPage() {
   const { id } = useParams();
   const location = useLocation();
@@ -58,6 +64,12 @@ function DocumentDetailsPage() {
   });
   const [downloadError, setDownloadError] = useState("");
   const [downloading, setDownloading] = useState(false);
+  const [versionFile, setVersionFile] = useState(null);
+  const [uploadingVersion, setUploadingVersion] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [versionUploadError, setVersionUploadError] = useState("");
+  const [versionUploadSuccess, setVersionUploadSuccess] = useState("");
+  const versionFileInputRef = useRef(null);
   const invalidId = !UUID_PATTERN.test(id ?? "");
 
   useEffect(() => {
@@ -161,6 +173,87 @@ function DocumentDetailsPage() {
     }
   }
 
+  async function handleVersionUpload(event) {
+    event.preventDefault();
+    setVersionUploadError("");
+    setVersionUploadSuccess("");
+
+    if (!versionFile) {
+      setVersionUploadError("Choose a file to upload as a new version.");
+      return;
+    }
+
+    const currentExtension = getFileExtension(document.name);
+    const uploadedExtension = getFileExtension(versionFile.name);
+
+    if (!currentExtension || uploadedExtension !== currentExtension) {
+      setVersionUploadError(
+        "The new version must use the same file extension as the current document.",
+      );
+      return;
+    }
+
+    if (versionFile.size === 0) {
+      setVersionUploadError("Empty files cannot be uploaded.");
+      return;
+    }
+
+    if (versionFile.size > 10 * 1024 * 1024) {
+      setVersionUploadError("The file must be 10 MiB or smaller.");
+      return;
+    }
+
+    setUploadingVersion(true);
+    setUploadProgress(0);
+
+    try {
+      const updatedDocument = await uploadDocumentVersion(
+        document.id,
+        versionFile,
+        setUploadProgress,
+      );
+      setLoadState((currentState) =>
+        currentState.id === id
+          ? { ...currentState, document: updatedDocument }
+          : currentState,
+      );
+      setVersionFile(null);
+      setUploadProgress(100);
+      setVersionUploadSuccess(
+        `Version ${updatedDocument.current_version} uploaded successfully.`,
+      );
+
+      if (versionFileInputRef.current) {
+        versionFileInputRef.current.value = "";
+      }
+
+      setVersionLoadState({ id: null, versions: [], error: "" });
+
+      try {
+        const updatedVersions = await getDocumentVersions(document.id);
+        setVersionLoadState({ id, versions: updatedVersions, error: "" });
+      } catch (requestError) {
+        setVersionLoadState({
+          id,
+          versions: [],
+          error: getApiErrorMessage(
+            requestError,
+            "Unable to refresh version history. Please try again.",
+          ),
+        });
+      }
+    } catch (requestError) {
+      setVersionUploadError(
+        getApiErrorMessage(
+          requestError,
+          "The new version could not be uploaded. Please try again.",
+        ),
+      );
+    } finally {
+      setUploadingVersion(false);
+    }
+  }
+
   return (
     <section className="documents-page document-details">
       <Link className="document-details__back" to={returnTo}>
@@ -244,6 +337,72 @@ function DocumentDetailsPage() {
               <dd>{formatDate(document.updated_at)}</dd>
             </div>
           </dl>
+
+          <form
+            className="document-upload document-version-upload"
+            onSubmit={handleVersionUpload}
+          >
+            <div className="document-upload__heading">
+              <h2>Upload a new version</h2>
+              <p>Choose a file with the same extension, up to 10 MiB.</p>
+            </div>
+
+            <div className="document-upload__controls">
+              <input
+                ref={versionFileInputRef}
+                id="document-version-file"
+                type="file"
+                accept={getFileExtension(document.name) || undefined}
+                disabled={uploadingVersion}
+                onChange={(inputEvent) => {
+                  setVersionFile(inputEvent.target.files?.[0] ?? null);
+                  setVersionUploadError("");
+                  setVersionUploadSuccess("");
+                }}
+              />
+              <button
+                type="submit"
+                disabled={uploadingVersion || !versionFile}
+              >
+                {uploadingVersion ? "Uploading version…" : "Upload version"}
+              </button>
+            </div>
+
+            {versionFile && (
+              <p className="document-upload__selected">
+                Selected: {versionFile.name} ({formatFileSize(versionFile.size)})
+              </p>
+            )}
+
+            {uploadingVersion && (
+              <div className="document-upload__progress">
+                <progress
+                  value={uploadProgress}
+                  max="100"
+                  aria-label="Version upload progress"
+                />
+                <span>{uploadProgress}%</span>
+              </div>
+            )}
+
+            {versionUploadError && (
+              <p
+                className="document-upload__message document-upload__message--error"
+                role="alert"
+              >
+                {versionUploadError}
+              </p>
+            )}
+
+            {versionUploadSuccess && (
+              <p
+                className="document-upload__message document-upload__message--success"
+                role="status"
+              >
+                {versionUploadSuccess}
+              </p>
+            )}
+          </form>
 
           <section
             className="document-version-history"
