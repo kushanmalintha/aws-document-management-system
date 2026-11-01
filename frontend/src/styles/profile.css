@@ -1,0 +1,145 @@
+.profile-page__header {
+  margin-bottom: 24px;
+}
+
+.profile-page__header h1 {
+  margin: 0;
+  color: #172033;
+  font-size: clamp(1.7rem, 3vw, 2.2rem);
+}
+
+.profile-page__header p:last-child {
+  margin: 8px 0 0;
+  color: #64748b;
+}
+
+.profile-page__eyebrow {
+  margin: 0 0 8px;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.profile-card,
+.profile-state {
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.profile-card h2 {
+  margin: 0 0 20px;
+  color: #172033;
+  font-size: 1.1rem;
+}
+
+.profile-field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.profile-field label {
+  color: #334155;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.profile-field input {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #172033;
+  font: inherit;
+}
+
+.profile-field input:focus {
+  border-color: #2563eb;
+  outline: 3px solid rgb(37 99 235 / 15%);
+}
+
+.profile-field input[readonly] {
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.profile-submit,
+.profile-state button {
+  min-height: 40px;
+  padding: 9px 15px;
+  border: 1px solid #1d4ed8;
+  border-radius: 7px;
+  background: #1d4ed8;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.profile-submit:hover:not(:disabled),
+.profile-state button:hover {
+  background: #1e40af;
+}
+
+.profile-submit:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.profile-message {
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+}
+
+.profile-message--error,
+.profile-state--error {
+  color: #b91c1c;
+}
+
+.profile-message--success {
+  color: #15803d;
+}
+
+.profile-state p {
+  margin: 0 0 14px;
+}
+
+.profile-details {
+  display: grid;
+  gap: 18px;
+  margin: 0;
+}
+
+.profile-details > div {
+  min-width: 0;
+}
+
+.profile-details dt {
+  margin-bottom: 6px;
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.profile-details dd {
+  margin: 0;
+  color: #172033;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .profile-card,
+  .profile-state {
+    padding: 20px;
+  }
+}

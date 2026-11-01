@@ -9,15 +9,7 @@ import DocumentsPage from "./pages/DocumentsPage";
 import DocumentDetailsPage from "./pages/DocumentDetailsPage";
 import FolderBrowserPage from "./pages/FolderBrowserPage";
 import ActivityPage from "./pages/ActivityPage";
-
-function ComingSoonPage({ title }) {
-  return (
-    <section>
-      <h1>{title}</h1>
-      <p>This section will be implemented in a later task.</p>
-    </section>
-  );
-}
+import ProfilePage from "./pages/ProfilePage";
 
 export default function App() {
   return (
@@ -35,10 +27,7 @@ export default function App() {
           <Route path="/folders" element={<FolderBrowserPage />} />
           <Route path="/folders/:id" element={<FolderBrowserPage />} />
           <Route path="/activities" element={<ActivityPage />} />
-          <Route
-            path="/profile"
-            element={<ComingSoonPage title="Profile" />}
-          />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Route>
 

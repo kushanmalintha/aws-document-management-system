@@ -103,6 +103,10 @@ export function AuthProvider({ children }) {
     return result.user;
   }, []);
 
+  const updateUser = useCallback((updatedUser) => {
+    setUser(updatedUser);
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await logoutUser();
@@ -121,6 +125,7 @@ export function AuthProvider({ children }) {
     login,
     logout,
     refreshUser,
+    updateUser,
   };
 
   return (
