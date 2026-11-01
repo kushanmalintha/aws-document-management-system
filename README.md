@@ -52,19 +52,23 @@ Docker Compose runs PostgreSQL, the FastAPI backend, and the built React fronten
 The backend applies Alembic migrations when it starts. PostgreSQL data and uploaded
 documents are stored in named Docker volumes and persist when the containers stop.
 
-1. Create `.env` from `.env.example` if you do not already have a root `.env` file.
-   If one already exists, add any missing Compose variables to it without replacing
-   your existing settings. Set a local database password and a long random JWT
-   secret before starting the services.
-2. Start the application from the repository root:
+1. Create the root `.env` from `.env.example` if it does not already exist. If it
+   does, keep its existing settings and add any missing Compose variables.
+2. Create `backend/.env` from `backend/.env.example` if it does not already exist.
+   The backend container reads its JWT and application settings from this file;
+   keep its JWT secret set to a long random value. Compose overrides the backend
+   database host, port, and credentials with the root `.env` settings.
+3. `frontend/.env` is only used when running Vite directly and is not needed for
+   Docker Compose; the Compose frontend uses the same-origin Nginx API proxy.
+4. Start the application from the repository root:
 
    ```sh
    docker compose up --build
    ```
 
-3. Open the frontend at `http://localhost:8080`. The backend API and interactive
+5. Open the frontend at `http://localhost:8080`. The backend API and interactive
    documentation are available at `http://localhost:8000` and
-   `http://localhost:8000/docs`.
+   `http://localhost:8000/docs` by default.
 
 The frontend proxies API and health requests to the backend, so browser requests
 use the same origin. The database is also available on `localhost:5433` by default.
