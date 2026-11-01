@@ -122,3 +122,28 @@ export async function downloadDocument(documentId) {
 
   return response.data;
 }
+
+export async function downloadDocumentVersion(documentId, versionNumber) {
+  try {
+    const response = await api.get(
+      `/api/documents/${documentId}/versions/${versionNumber}/download`,
+      {
+        responseType: "blob",
+      },
+    );
+
+    return response.data;
+  } catch (error) {
+    const responseData = error?.response?.data;
+
+    if (responseData instanceof Blob) {
+      try {
+        error.response.data = JSON.parse(await responseData.text());
+      } catch {
+        // Leave non-JSON blob errors to the shared fallback message.
+      }
+    }
+
+    throw error;
+  }
+}

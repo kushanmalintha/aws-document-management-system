@@ -4,6 +4,7 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { getApiErrorMessage } from "../services/api";
 import {
   downloadDocument,
+  downloadDocumentVersion,
   getDocument,
   getDocumentVersions,
   uploadDocumentVersion,
@@ -64,6 +65,8 @@ function DocumentDetailsPage() {
   });
   const [downloadError, setDownloadError] = useState("");
   const [downloading, setDownloading] = useState(false);
+  const [downloadingVersion, setDownloadingVersion] = useState(null);
+  const [versionDownloadError, setVersionDownloadError] = useState("");
   const [versionFile, setVersionFile] = useState(null);
   const [uploadingVersion, setUploadingVersion] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -170,6 +173,42 @@ function DocumentDetailsPage() {
       );
     } finally {
       setDownloading(false);
+    }
+  }
+
+  async function handleVersionDownload(version) {
+    setVersionDownloadError("");
+    setDownloadingVersion(version.version_number);
+
+    try {
+      const fileBlob = await downloadDocumentVersion(
+        document.id,
+        version.version_number,
+      );
+      const objectUrl = URL.createObjectURL(fileBlob);
+      const link = window.document.createElement("a");
+      const extensionIndex = document.name.lastIndexOf(".");
+      const fileName =
+        extensionIndex > 0
+          ? `${document.name.slice(0, extensionIndex)} (v${version.version_number})${document.name.slice(extensionIndex)}`
+          : `${document.name} (v${version.version_number})`;
+
+      link.href = objectUrl;
+      link.download = fileName;
+      link.style.display = "none";
+      window.document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch (requestError) {
+      setVersionDownloadError(
+        getApiErrorMessage(
+          requestError,
+          `Unable to download version ${version.version_number}.`,
+        ),
+      );
+    } finally {
+      setDownloadingVersion(null);
     }
   }
 
@@ -445,6 +484,7 @@ function DocumentDetailsPage() {
                       <th scope="col">File size</th>
                       <th scope="col">Uploaded</th>
                       <th scope="col">Checksum</th>
+                      <th scope="col">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -463,11 +503,32 @@ function DocumentDetailsPage() {
                         <td className="document-version-history__checksum">
                           {version.checksum || "Unavailable"}
                         </td>
+                        <td>
+                          <button
+                            className="document-version-history__download"
+                            type="button"
+                            onClick={() => handleVersionDownload(version)}
+                            disabled={downloadingVersion !== null}
+                            aria-label={`Download version ${version.version_number}`}
+                          >
+                            {downloadingVersion === version.version_number
+                              ? "Downloading…"
+                              : "Download"}
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+            )}
+            {versionDownloadError && (
+              <p
+                className="document-version-history__message document-version-history__message--error"
+                role="alert"
+              >
+                {versionDownloadError}
+              </p>
             )}
           </section>
         </>

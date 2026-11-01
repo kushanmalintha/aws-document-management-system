@@ -418,7 +418,30 @@
 }
 
 .document-version-history__table {
-  min-width: 680px;
+  min-width: 780px;
+}
+
+.document-version-history__download {
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #1d4ed8;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.document-version-history__download:hover:not(:disabled) {
+  border-color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.document-version-history__download:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .document-version-history__current {
