@@ -11,3 +11,12 @@ export async function getFolders() {
 
   return response.data;
 }
+
+export async function createFolder(name, parentFolderId = null) {
+  const response = await api.post("/api/folders", {
+    name,
+    parent_folder_id: parentFolderId,
+  });
+
+  return response.data;
+}

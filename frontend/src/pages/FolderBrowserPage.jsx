@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { getApiErrorMessage } from "../services/api";
-import { getFolders } from "../services/folderService";
+import { createFolder, getFolders } from "../services/folderService";
 import "../styles/folders.css";
 
 const UUID_PATTERN =
@@ -17,6 +17,10 @@ function FolderBrowserPage() {
     folders: [],
     error: "",
   });
+  const [folderName, setFolderName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
+  const [createSuccess, setCreateSuccess] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -79,6 +83,47 @@ function FolderBrowserPage() {
       ? "Folder not found."
       : error;
 
+  async function handleCreateFolder(event) {
+    event.preventDefault();
+    const name = folderName.trim();
+
+    if (!name) {
+      setCreateError("Enter a folder name.");
+      setCreateSuccess("");
+      return;
+    }
+
+    if (name.length > 255) {
+      setCreateError("Folder names must be 255 characters or fewer.");
+      setCreateSuccess("");
+      return;
+    }
+
+    setCreateError("");
+    setCreateSuccess("");
+    setCreating(true);
+
+    try {
+      const createdFolder = await createFolder(name, id ?? null);
+      setLoadState((currentState) =>
+        currentState.key === routeKey
+          ? { ...currentState, folders: [...currentState.folders, createdFolder] }
+          : currentState,
+      );
+      setFolderName("");
+      setCreateSuccess(`Folder "${createdFolder.name}" created.`);
+    } catch (requestError) {
+      setCreateError(
+        getApiErrorMessage(
+          requestError,
+          "Unable to create the folder. Please try again.",
+        ),
+      );
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
     <section className="folder-browser">
       <nav className="folder-breadcrumbs" aria-label="Folder breadcrumbs">
@@ -121,6 +166,40 @@ function FolderBrowserPage() {
           </span>
         )}
       </div>
+
+      {!loading && !pageError && (
+        <form className="folder-create" onSubmit={handleCreateFolder}>
+          <div className="folder-create__field">
+            <label htmlFor="folder-name">New folder name</label>
+            <input
+              id="folder-name"
+              type="text"
+              value={folderName}
+              maxLength={255}
+              autoComplete="off"
+              disabled={creating}
+              onChange={(event) => {
+                setFolderName(event.target.value);
+                setCreateError("");
+                setCreateSuccess("");
+              }}
+            />
+          </div>
+          <button type="submit" disabled={creating || !folderName.trim()}>
+            {creating ? "Creating…" : "Create folder"}
+          </button>
+          {createError && (
+            <p className="folder-create__message folder-create__message--error" role="alert">
+              {createError}
+            </p>
+          )}
+          {createSuccess && (
+            <p className="folder-create__message folder-create__message--success" role="status">
+              {createSuccess}
+            </p>
+          )}
+        </form>
+      )}
 
       {loading && (
         <div className="folder-browser__state" role="status">
