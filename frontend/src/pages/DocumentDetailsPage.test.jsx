@@ -1,0 +1,242 @@
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const documentService = vi.hoisted(() => ({
+  downloadDocument: vi.fn(),
+  downloadDocumentVersion: vi.fn(),
+  getDocument: vi.fn(),
+  getDocumentVersions: vi.fn(),
+  uploadDocumentVersion: vi.fn(),
+}));
+
+vi.mock("../services/documentService", () => documentService);
+vi.mock("../services/api", () => ({
+  getApiErrorMessage: (error, fallback) => error?.message || fallback,
+}));
+
+import DocumentDetailsPage from "./DocumentDetailsPage";
+import {
+  downloadDocument,
+  downloadDocumentVersion,
+  getDocument,
+  getDocumentVersions,
+  uploadDocumentVersion,
+} from "../services/documentService";
+
+const documentId = "123e4567-e89b-12d3-a456-426614174000";
+const folderId = "123e4567-e89b-12d3-a456-426614174001";
+const documentFixture = {
+  id: documentId,
+  name: "report.pdf",
+  content_type: "application/pdf",
+  size_bytes: 2048,
+  status: "UPLOADED",
+  current_version: 2,
+  folder_id: folderId,
+  created_at: "2025-01-10T12:00:00Z",
+  updated_at: "2025-01-11T12:00:00Z",
+};
+const versionOne = {
+  id: "version-1",
+  document_id: documentId,
+  version_number: 1,
+  size_bytes: 1024,
+  checksum: "checksum-one",
+  created_at: "2025-01-10T12:00:00Z",
+};
+const versionTwo = {
+  id: "version-2",
+  document_id: documentId,
+  version_number: 2,
+  size_bytes: 2048,
+  checksum: "checksum-two",
+  created_at: "2025-01-11T12:00:00Z",
+};
+
+function renderDetails(id = documentId, state = {}) {
+  return render(
+    <MemoryRouter
+      initialEntries={[{ pathname: `/documents/${id}`, state }]}
+    >
+      <Routes>
+        <Route path="/documents/:id" element={<DocumentDetailsPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
+const originalCreateObjectURL = URL.createObjectURL;
+const originalRevokeObjectURL = URL.revokeObjectURL;
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  if (originalCreateObjectURL) {
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: originalCreateObjectURL,
+    });
+  } else {
+    delete URL.createObjectURL;
+  }
+  if (originalRevokeObjectURL) {
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: originalRevokeObjectURL,
+    });
+  } else {
+    delete URL.revokeObjectURL;
+  }
+});
+
+describe("DocumentDetailsPage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getDocument.mockResolvedValue(documentFixture);
+    getDocumentVersions.mockResolvedValue([versionOne, versionTwo]);
+    downloadDocument.mockResolvedValue(new Blob(["current file"]));
+    downloadDocumentVersion.mockResolvedValue(new Blob(["older file"]));
+    uploadDocumentVersion.mockResolvedValue({
+      ...documentFixture,
+      current_version: 3,
+    });
+  });
+
+  it("shows document metadata, newest-first versions, and a safe back link", async () => {
+    renderDetails(documentId, { returnTo: `/folders/${folderId}` });
+
+    expect(await screen.findByRole("heading", { name: "report.pdf" }))
+      .toBeInTheDocument();
+    expect(screen.getByText(documentId)).toBeInTheDocument();
+    expect(screen.getByText("application/pdf")).toBeInTheDocument();
+    expect(
+      within(document.querySelector(".document-details__metadata")).getByText(
+        "2.0 KB",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back to folder" })).toHaveAttribute(
+      "href",
+      `/folders/${folderId}`,
+    );
+
+    await screen.findByText("checksum-two");
+    const rows = screen.getAllByRole("row");
+    expect(within(rows[1]).getByText("Version 2")).toBeInTheDocument();
+    expect(within(rows[1]).getByText("Current")).toBeInTheDocument();
+    expect(within(rows[2]).getByText("Version 1")).toBeInTheDocument();
+  });
+
+  it("rejects an invalid document ID without making API requests", () => {
+    renderDetails("not-a-uuid");
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "This document ID is invalid.",
+    );
+    expect(getDocument).not.toHaveBeenCalled();
+    expect(getDocumentVersions).not.toHaveBeenCalled();
+  });
+
+  it("shows API errors when the document cannot be loaded", async () => {
+    getDocument.mockRejectedValue(new Error("Document not found"));
+    renderDetails();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Document not found",
+    );
+  });
+
+  it("shows a separate error when version history cannot be loaded", async () => {
+    getDocumentVersions.mockRejectedValue(
+      new Error("Unable to load version history."),
+    );
+    renderDetails();
+
+    expect(await screen.findByRole("heading", { name: "report.pdf" }))
+      .toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Unable to load version history.",
+    );
+    expect(screen.getByRole("button", { name: "Download" })).toBeInTheDocument();
+  });
+
+  it("downloads the current document and a selected historical version", async () => {
+    const createObjectURL = vi.fn(() => "blob:download");
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: createObjectURL,
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: vi.fn(),
+    });
+    const clickedDownloads = [];
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function () {
+      clickedDownloads.push(this.download);
+    });
+
+    renderDetails();
+    await screen.findByText("checksum-two");
+
+    fireEvent.click(screen.getByRole("button", { name: "Download version 1" }));
+    await waitFor(() => {
+      expect(downloadDocumentVersion).toHaveBeenCalledWith(documentId, 1);
+    });
+    expect(clickedDownloads).toContain("report (v1).pdf");
+
+    fireEvent.click(screen.getByRole("button", { name: "Download" }));
+    await waitFor(() => expect(downloadDocument).toHaveBeenCalledWith(documentId));
+    expect(clickedDownloads).toContain("report.pdf");
+  });
+
+  it("uploads a same-extension version and refreshes version history", async () => {
+    getDocumentVersions
+      .mockResolvedValueOnce([versionOne, versionTwo])
+      .mockResolvedValueOnce([
+        versionOne,
+        versionTwo,
+        { ...versionTwo, id: "version-three", version_number: 3 },
+      ]);
+    uploadDocumentVersion.mockResolvedValue({
+      ...documentFixture,
+      current_version: 3,
+    });
+    const { container } = renderDetails();
+    await screen.findByText("checksum-two");
+    const file = new File(["revision"], "revision.pdf", {
+      type: "application/pdf",
+    });
+
+    fireEvent.change(container.querySelector("#document-version-file"), {
+      target: { files: [file] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Upload version" }));
+
+    await waitFor(() => {
+      expect(uploadDocumentVersion).toHaveBeenCalledWith(
+        documentId,
+        file,
+        expect.any(Function),
+      );
+    });
+    expect(await screen.findByText("Version 3 uploaded successfully."))
+      .toBeInTheDocument();
+    expect(getDocumentVersions).toHaveBeenCalledTimes(2);
+    expect(screen.getByText("Version 3")).toBeInTheDocument();
+  });
+
+  it("rejects a new version with a different extension", async () => {
+    const { container } = renderDetails();
+    await screen.findByText("checksum-two");
+    const file = new File(["text"], "revision.txt", { type: "text/plain" });
+
+    fireEvent.change(container.querySelector("#document-version-file"), {
+      target: { files: [file] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Upload version" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The new version must use the same file extension",
+    );
+    expect(uploadDocumentVersion).not.toHaveBeenCalled();
+  });
+});
