@@ -2,7 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { getApiErrorMessage } from "../services/api";
-import { downloadDocument, getDocuments, uploadDocument } from "../services/documentService";
+import {
+  deleteDocument,
+  downloadDocument,
+  getDocuments,
+  uploadDocument,
+} from "../services/documentService";
 
 import "../styles/documents.css";
 
@@ -98,6 +103,9 @@ function DocumentsPage() {
 
   const [downloadingDocumentId, setDownloadingDocumentId] = useState(null);
   const [downloadError, setDownloadError] = useState("");
+  const [deletingDocumentId, setDeletingDocumentId] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteSuccess, setDeleteSuccess] = useState("");
   const fileInputRef = useRef(null);
   const requestIdRef = useRef(0);
 
@@ -254,6 +262,39 @@ function DocumentsPage() {
       );
     } finally {
       setDownloadingDocumentId(null);
+    }
+  }
+
+  async function handleDelete(document) {
+    const documentName = getDocumentName(document);
+
+    if (
+      !window.confirm(
+        `Delete "${documentName}"? It will be removed from your documents list.`,
+      )
+    ) {
+      return;
+    }
+
+    setDeleteError("");
+    setDeleteSuccess("");
+    setDeletingDocumentId(document.id);
+
+    try {
+      await deleteDocument(document.id);
+      setDocuments((currentDocuments) =>
+        currentDocuments.filter((item) => item.id !== document.id),
+      );
+      setDeleteSuccess(`"${documentName}" was deleted.`);
+    } catch (requestError) {
+      setDeleteError(
+        getApiErrorMessage(
+          requestError,
+          `Unable to delete "${documentName}". Please try again.`,
+        ),
+      );
+    } finally {
+      setDeletingDocumentId(null);
     }
   }
 
@@ -450,6 +491,18 @@ function DocumentsPage() {
         </p>
       )}
 
+      {deleteError && (
+        <p className="document-upload__message document-upload__message--error" role="alert">
+          {deleteError}
+        </p>
+      )}
+
+      {deleteSuccess && (
+        <p className="document-upload__message document-upload__message--success" role="status">
+          {deleteSuccess}
+        </p>
+      )}
+
       {loading && (
         <div className="documents-state" role="status">
           Loading documents…
@@ -523,12 +576,29 @@ function DocumentsPage() {
                       className="documents-clear-button"
                       type="button"
                       onClick={() => handleDownload(document)}
-                      disabled={downloadingDocumentId !== null}
+                      disabled={
+                        downloadingDocumentId !== null ||
+                        deletingDocumentId !== null
+                      }
                       aria-label={`Download ${getDocumentName(document)}`}
                     >
                       {downloadingDocumentId === document.id
                         ? "Downloading…"
                         : "Download"}
+                    </button>
+                    <button
+                      className="documents-clear-button documents-delete-button"
+                      type="button"
+                      onClick={() => handleDelete(document)}
+                      disabled={
+                        deletingDocumentId !== null ||
+                        downloadingDocumentId !== null
+                      }
+                      aria-label={`Delete ${getDocumentName(document)}`}
+                    >
+                      {deletingDocumentId === document.id
+                        ? "Deleting…"
+                        : "Delete"}
                     </button>
                   </td>
                 </tr>

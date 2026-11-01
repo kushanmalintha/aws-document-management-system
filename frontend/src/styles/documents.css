@@ -204,6 +204,16 @@
   background: #f1f5f9;
 }
 
+.documents-delete-button {
+  margin-left: 8px;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.documents-delete-button:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
 .documents-clear-button:disabled {
   cursor: not-allowed;
   opacity: 0.5;

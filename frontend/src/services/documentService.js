@@ -48,6 +48,10 @@ export async function getDocument(documentId) {
   return response.data;
 }
 
+export async function deleteDocument(documentId) {
+  await api.delete(`/api/documents/${documentId}`);
+}
+
 export async function uploadDocument(file, onProgress) {
   const formData = new FormData();
   formData.append("file", file);
