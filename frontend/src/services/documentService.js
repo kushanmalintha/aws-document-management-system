@@ -61,3 +61,14 @@ export async function uploadDocument(file, onProgress) {
 
   return response.data;
 }
+
+export async function downloadDocument(documentId) {
+  const response = await api.get(
+    `/api/documents/${documentId}/download`,
+    {
+      responseType: "blob",
+    },
+  );
+
+  return response.data;
+}

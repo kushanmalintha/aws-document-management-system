@@ -1,10 +1,24 @@
-
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { getApiErrorMessage } from "../services/api";
-import { getDocuments, uploadDocument } from "../services/documentService";
+import { downloadDocument, getDocuments, uploadDocument } from "../services/documentService";
 
 import "../styles/documents.css";
+
+const ALLOWED_EXTENSIONS = [
+  ".pdf",
+  ".txt",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+  ".ppt",
+  ".pptx",
+  ".csv",
+  ".png",
+  ".jpg",
+  ".jpeg",
+];
 
 function formatFileSize(bytes) {
   if (bytes === null || bytes === undefined || bytes === "") {
@@ -59,6 +73,10 @@ function getDocumentType(document) {
   return extension || "Unknown";
 }
 
+function getDocumentName(document) {
+  return document.name || document.filename || "Untitled document";
+}
+
 function DocumentsPage() {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -69,8 +87,7 @@ function DocumentsPage() {
   const [contentType, setContentType] = useState("");
   const [sortBy, setSortBy] = useState("created_at");
   const [sortOrder, setSortOrder] = useState("desc");
-  const requestIdRef = useRef(0);
-  const fileInputRef = useRef(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -78,20 +95,10 @@ function DocumentsPage() {
   const [uploadError, setUploadError] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState("");
 
-  const allowedExtensions = [
-    ".pdf",
-    ".txt",
-    ".doc",
-    ".docx",
-    ".xls",
-    ".xlsx",
-    ".ppt",
-    ".pptx",
-    ".csv",
-    ".png",
-    ".jpg",
-    ".jpeg",
-  ];
+  const [downloadingDocumentId, setDownloadingDocumentId] = useState(null);
+  const [downloadError, setDownloadError] = useState("");
+  const fileInputRef = useRef(null);
+  const requestIdRef = useRef(0);
 
   const loadDocuments = useCallback(async () => {
     const requestId = ++requestIdRef.current;
@@ -106,6 +113,7 @@ function DocumentsPage() {
 
       if (requestId === requestIdRef.current) {
         setDocuments(result);
+        setError("");
       }
     } catch (requestError) {
       if (requestId === requestIdRef.current) {
@@ -123,76 +131,6 @@ function DocumentsPage() {
     }
   }, [search, contentType, sortBy, sortOrder]);
 
-  async function handleUpload(event) {
-    event.preventDefault();
-
-    setUploadError("");
-    setUploadSuccess("");
-
-    if (!selectedFile) {
-      setUploadError("Choose a file to upload.");
-      return;
-    }
-
-    const lastDotIndex = selectedFile.name.lastIndexOf(".");
-    const extension =
-      lastDotIndex > 0 ? selectedFile.name.slice(lastDotIndex).toLowerCase() : "";
-
-    if (!allowedExtensions.includes(extension)) {
-      setUploadError("This file type is not supported.");
-      return;
-    }
-
-    if (selectedFile.size === 0) {
-      setUploadError("Empty files cannot be uploaded.");
-      return;
-    }
-
-    if (selectedFile.size > 10 * 1024 * 1024) {
-      setUploadError("The file must be 10 MiB or smaller.");
-      return;
-    }
-
-    setIsUploading(true);
-    setUploadProgress(0);
-
-    try {
-      await uploadDocument(selectedFile, setUploadProgress);
-
-      setUploadSuccess(`"${selectedFile.name}" uploaded successfully.`);
-      setSelectedFile(null);
-      setUploadProgress(0);
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-
-      // Refresh using the current search, filter, and sort settings.
-      setLoading(true);
-      setError("");
-      await loadDocuments();
-    } catch (requestError) {
-      setUploadError(
-        getApiErrorMessage(
-          requestError,
-          "The file could not be uploaded. Please try again.",
-        ),
-      );
-    } finally {
-      setIsUploading(false);
-    }
-  }
-
-  // Debounce text search to avoid sending a request for every keystroke.
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setSearch(searchInput.trim());
-    }, 350);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchInput]);
-
-  // Load documents whenever the applied search, filter, or sort changes.
   useEffect(() => {
     const requestId = ++requestIdRef.current;
 
@@ -200,6 +138,7 @@ function DocumentsPage() {
       .then((result) => {
         if (requestId === requestIdRef.current) {
           setDocuments(result);
+          setError("");
         }
       })
       .catch((requestError) => {
@@ -219,15 +158,108 @@ function DocumentsPage() {
       });
 
     return () => {
-      // Ignore any request that finishes after this effect is cleaned up.
       requestIdRef.current += 1;
     };
-  }, [search, contentType, sortBy, sortOrder]);
+  }, [search, contentType, sortBy, sortOrder, retryCount]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setSearch(searchInput.trim());
+    }, 350);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchInput]);
+
+  async function handleUpload(event) {
+    event.preventDefault();
+    setUploadError("");
+    setUploadSuccess("");
+
+    if (!selectedFile) {
+      setUploadError("Choose a file to upload.");
+      return;
+    }
+
+    const lastDotIndex = selectedFile.name.lastIndexOf(".");
+    const extension =
+      lastDotIndex > 0
+        ? selectedFile.name.slice(lastDotIndex).toLowerCase()
+        : "";
+
+    if (!ALLOWED_EXTENSIONS.includes(extension)) {
+      setUploadError("This file type is not supported.");
+      return;
+    }
+
+    if (selectedFile.size === 0) {
+      setUploadError("Empty files cannot be uploaded.");
+      return;
+    }
+
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      setUploadError("The file must be 10 MiB or smaller.");
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      await uploadDocument(selectedFile, setUploadProgress);
+      setUploadSuccess(`"${selectedFile.name}" uploaded successfully.`);
+      setSelectedFile(null);
+      setUploadProgress(0);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      setLoading(true);
+      setError("");
+      await loadDocuments();
+    } catch (requestError) {
+      setUploadError(
+        getApiErrorMessage(
+          requestError,
+          "The file could not be uploaded. Please try again.",
+        ),
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  async function handleDownload(document) {
+    setDownloadError("");
+    setDownloadingDocumentId(document.id);
+
+    try {
+      const fileBlob = await downloadDocument(document.id);
+      const objectUrl = URL.createObjectURL(fileBlob);
+      const link = window.document.createElement("a");
+      link.href = objectUrl;
+      link.download = getDocumentName(document);
+      link.style.display = "none";
+      window.document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch (requestError) {
+      setDownloadError(
+        getApiErrorMessage(
+          requestError,
+          `Unable to download "${getDocumentName(document)}". Please try again.`,
+        ),
+      );
+    } finally {
+      setDownloadingDocumentId(null);
+    }
+  }
 
   function retryDocumentLoad() {
     setLoading(true);
     setError("");
-    loadDocuments();
+    setRetryCount((count) => count + 1);
   }
 
   function clearFilters() {
@@ -267,8 +299,7 @@ function DocumentsPage() {
         </div>
 
         <span className="documents-page__count">
-          {documents.length}{" "}
-          {documents.length === 1 ? "document" : "documents"}
+          {documents.length} {documents.length === 1 ? "document" : "documents"}
         </span>
       </div>
 
@@ -283,7 +314,7 @@ function DocumentsPage() {
             ref={fileInputRef}
             id="document-file"
             type="file"
-            accept=".pdf,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.png,.jpg,.jpeg"
+            accept={ALLOWED_EXTENSIONS.join(",")}
             disabled={isUploading}
             onChange={(event) => {
               setSelectedFile(event.target.files?.[0] ?? null);
@@ -349,9 +380,7 @@ function DocumentsPage() {
           <select
             id="document-type"
             value={contentType}
-            onChange={(event) =>
-              updateFilter(setContentType, event.target.value)
-            }
+            onChange={(event) => updateFilter(setContentType, event.target.value)}
           >
             <option value="">All file types</option>
             <option value="application/pdf">PDF</option>
@@ -361,9 +390,7 @@ function DocumentsPage() {
             <option value="application/vnd.openxmlformats-officedocument.wordprocessingml.document">
               Word (.docx)
             </option>
-            <option value="application/vnd.ms-excel">
-              Excel (.xls)
-            </option>
+            <option value="application/vnd.ms-excel">Excel (.xls)</option>
             <option value="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
               Excel (.xlsx)
             </option>
@@ -395,9 +422,7 @@ function DocumentsPage() {
           <select
             id="document-sort-order"
             value={sortOrder}
-            onChange={(event) =>
-              updateFilter(setSortOrder, event.target.value)
-            }
+            onChange={(event) => updateFilter(setSortOrder, event.target.value)}
           >
             <option value="desc">
               {sortBy === "name" ? "Z to A" : "Newest first"}
@@ -418,6 +443,12 @@ function DocumentsPage() {
         </button>
       </div>
 
+      {downloadError && (
+        <p className="document-upload__message document-upload__message--error" role="alert">
+          {downloadError}
+        </p>
+      )}
+
       {loading && (
         <div className="documents-state" role="status">
           Loading documents…
@@ -435,15 +466,12 @@ function DocumentsPage() {
 
       {!loading && !error && documents.length === 0 && (
         <div className="documents-state">
-          <h2>
-            {hasFilters ? "No matching documents" : "No documents yet"}
-          </h2>
+          <h2>{hasFilters ? "No matching documents" : "No documents yet"}</h2>
           <p>
             {hasFilters
               ? "Try a different search or clear your filters."
               : "Your documents will appear here once you add your first file."}
           </p>
-
           {hasFilters && (
             <button type="button" onClick={clearFilters}>
               Clear filters
@@ -461,36 +489,40 @@ function DocumentsPage() {
                 <th scope="col">Type</th>
                 <th scope="col">Size</th>
                 <th scope="col">Date added</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
-
             <tbody>
               {documents.map((document) => (
                 <tr key={document.id}>
                   <td>
                     <div className="documents-table__name">
-                      <span
-                        className="documents-table__file-icon"
-                        aria-hidden="true"
-                      >
+                      <span className="documents-table__file-icon" aria-hidden="true">
                         {getDocumentType(document)
                           .split("/")
                           .pop()
                           .toUpperCase()
                           .slice(0, 4)}
                       </span>
-
-                      <span>
-                        {document.name ||
-                          document.filename ||
-                          "Untitled document"}
-                      </span>
+                      <span>{getDocumentName(document)}</span>
                     </div>
                   </td>
-
                   <td>{getDocumentType(document)}</td>
                   <td>{formatFileSize(document.size_bytes)}</td>
                   <td>{formatDate(document.created_at)}</td>
+                  <td>
+                    <button
+                      className="documents-clear-button"
+                      type="button"
+                      onClick={() => handleDownload(document)}
+                      disabled={downloadingDocumentId !== null}
+                      aria-label={`Download ${getDocumentName(document)}`}
+                    >
+                      {downloadingDocumentId === document.id
+                        ? "Downloading…"
+                        : "Download"}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
