@@ -6,6 +6,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import DocumentsPage from "./pages/DocumentsPage";
+import DocumentDetailsPage from "./pages/DocumentDetailsPage";
 
 function ComingSoonPage({ title }) {
   return (
@@ -28,6 +29,7 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="documents" element={<DocumentsPage />} />  
+          <Route path="documents/:id" element={<DocumentDetailsPage />} />
           <Route
             path="/folders"
             element={<ComingSoonPage title="Folders" />}

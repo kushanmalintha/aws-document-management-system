@@ -43,6 +43,11 @@ export async function getDocuments({
   );
 }
 
+export async function getDocument(documentId) {
+  const response = await api.get(`/api/documents/${documentId}`);
+  return response.data;
+}
+
 export async function uploadDocument(file, onProgress) {
   const formData = new FormData();
   formData.append("file", file);

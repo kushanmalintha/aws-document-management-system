@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { getApiErrorMessage } from "../services/api";
 import { downloadDocument, getDocuments, uploadDocument } from "../services/documentService";
@@ -511,6 +512,13 @@ function DocumentsPage() {
                   <td>{formatFileSize(document.size_bytes)}</td>
                   <td>{formatDate(document.created_at)}</td>
                   <td>
+                    <Link
+                      className="documents-clear-button documents-details-link"
+                      to={`/documents/${document.id}`}
+                      aria-label={`View details for ${getDocumentName(document)}`}
+                    >
+                      Details
+                    </Link>
                     <button
                       className="documents-clear-button"
                       type="button"
