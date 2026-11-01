@@ -42,3 +42,22 @@ export async function getDocuments({
     "The document list could not be loaded because the response format was unexpected.",
   );
 }
+
+export async function uploadDocument(file, onProgress) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await api.post("/api/documents/upload", formData, {
+    onUploadProgress: (event) => {
+      if (event.total && onProgress) {
+        const percentage = Math.round(
+          (event.loaded / event.total) * 100,
+        );
+
+        onProgress(percentage);
+      }
+    },
+  });
+
+  return response.data;
+}

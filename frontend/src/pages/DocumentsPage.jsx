@@ -1,8 +1,8 @@
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { getApiErrorMessage } from "../services/api";
-import { getDocuments } from "../services/documentService";
+import { getDocuments, uploadDocument } from "../services/documentService";
 
 import "../styles/documents.css";
 
@@ -69,33 +69,141 @@ function DocumentsPage() {
   const [contentType, setContentType] = useState("");
   const [sortBy, setSortBy] = useState("created_at");
   const [sortOrder, setSortOrder] = useState("desc");
-  const [retryCount, setRetryCount] = useState(0);
+  const requestIdRef = useRef(0);
+  const fileInputRef = useRef(null);
+
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState("");
+  const [uploadSuccess, setUploadSuccess] = useState("");
+
+  const allowedExtensions = [
+    ".pdf",
+    ".txt",
+    ".doc",
+    ".docx",
+    ".xls",
+    ".xlsx",
+    ".ppt",
+    ".pptx",
+    ".csv",
+    ".png",
+    ".jpg",
+    ".jpeg",
+  ];
+
+  const loadDocuments = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+
+    try {
+      const result = await getDocuments({
+        search,
+        contentType,
+        sortBy,
+        sortOrder,
+      });
+
+      if (requestId === requestIdRef.current) {
+        setDocuments(result);
+      }
+    } catch (requestError) {
+      if (requestId === requestIdRef.current) {
+        setError(
+          getApiErrorMessage(
+            requestError,
+            "Unable to load your documents. Please try again.",
+          ),
+        );
+      }
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [search, contentType, sortBy, sortOrder]);
+
+  async function handleUpload(event) {
+    event.preventDefault();
+
+    setUploadError("");
+    setUploadSuccess("");
+
+    if (!selectedFile) {
+      setUploadError("Choose a file to upload.");
+      return;
+    }
+
+    const lastDotIndex = selectedFile.name.lastIndexOf(".");
+    const extension =
+      lastDotIndex > 0 ? selectedFile.name.slice(lastDotIndex).toLowerCase() : "";
+
+    if (!allowedExtensions.includes(extension)) {
+      setUploadError("This file type is not supported.");
+      return;
+    }
+
+    if (selectedFile.size === 0) {
+      setUploadError("Empty files cannot be uploaded.");
+      return;
+    }
+
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      setUploadError("The file must be 10 MiB or smaller.");
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      await uploadDocument(selectedFile, setUploadProgress);
+
+      setUploadSuccess(`"${selectedFile.name}" uploaded successfully.`);
+      setSelectedFile(null);
+      setUploadProgress(0);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      // Refresh using the current search, filter, and sort settings.
+      setLoading(true);
+      setError("");
+      await loadDocuments();
+    } catch (requestError) {
+      setUploadError(
+        getApiErrorMessage(
+          requestError,
+          "The file could not be uploaded. Please try again.",
+        ),
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  }
 
   // Debounce text search to avoid sending a request for every keystroke.
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (search !== searchInput) {
-        setLoading(true);
-        setError("");
-      }
-      setSearch(searchInput);
+      setSearch(searchInput.trim());
     }, 350);
 
     return () => clearTimeout(timeoutId);
-  }, [searchInput, search]);
+  }, [searchInput]);
 
-  // Reload when the applied search, filter, or sort changes.
+  // Load documents whenever the applied search, filter, or sort changes.
   useEffect(() => {
-    let isCurrent = true;
+    const requestId = ++requestIdRef.current;
 
     getDocuments({ search, contentType, sortBy, sortOrder })
       .then((result) => {
-        if (isCurrent) {
+        if (requestId === requestIdRef.current) {
           setDocuments(result);
         }
       })
       .catch((requestError) => {
-        if (isCurrent) {
+        if (requestId === requestIdRef.current) {
           setError(
             getApiErrorMessage(
               requestError,
@@ -105,20 +213,21 @@ function DocumentsPage() {
         }
       })
       .finally(() => {
-        if (isCurrent) {
+        if (requestId === requestIdRef.current) {
           setLoading(false);
         }
       });
 
     return () => {
-      isCurrent = false;
+      // Ignore any request that finishes after this effect is cleaned up.
+      requestIdRef.current += 1;
     };
-  }, [search, contentType, sortBy, sortOrder, retryCount]);
+  }, [search, contentType, sortBy, sortOrder]);
 
   function retryDocumentLoad() {
     setLoading(true);
     setError("");
-    setRetryCount((count) => count + 1);
+    loadDocuments();
   }
 
   function clearFilters() {
@@ -135,6 +244,12 @@ function DocumentsPage() {
     setLoading(true);
     setError("");
     setter(value);
+  }
+
+  function updateSearchInput(value) {
+    setLoading(true);
+    setError("");
+    setSearchInput(value);
   }
 
   const hasFilters =
@@ -157,6 +272,66 @@ function DocumentsPage() {
         </span>
       </div>
 
+      <form className="document-upload" onSubmit={handleUpload}>
+        <div className="document-upload__heading">
+          <h2>Upload a document</h2>
+          <p>Choose a supported file up to 10 MiB.</p>
+        </div>
+
+        <div className="document-upload__controls">
+          <input
+            ref={fileInputRef}
+            id="document-file"
+            type="file"
+            accept=".pdf,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.png,.jpg,.jpeg"
+            disabled={isUploading}
+            onChange={(event) => {
+              setSelectedFile(event.target.files?.[0] ?? null);
+              setUploadError("");
+              setUploadSuccess("");
+            }}
+          />
+          <button type="submit" disabled={isUploading || !selectedFile}>
+            {isUploading ? "Uploading…" : "Upload document"}
+          </button>
+        </div>
+
+        {selectedFile && (
+          <p className="document-upload__selected">
+            Selected: {selectedFile.name} ({formatFileSize(selectedFile.size)})
+          </p>
+        )}
+
+        {isUploading && (
+          <div className="document-upload__progress">
+            <progress
+              value={uploadProgress}
+              max="100"
+              aria-label="Upload progress"
+            />
+            <span>{uploadProgress}%</span>
+          </div>
+        )}
+
+        {uploadError && (
+          <p
+            className="document-upload__message document-upload__message--error"
+            role="alert"
+          >
+            {uploadError}
+          </p>
+        )}
+
+        {uploadSuccess && (
+          <p
+            className="document-upload__message document-upload__message--success"
+            role="status"
+          >
+            {uploadSuccess}
+          </p>
+        )}
+      </form>
+
       <div className="documents-toolbar">
         <div className="documents-search">
           <label htmlFor="document-search">Search documents</label>
@@ -165,7 +340,7 @@ function DocumentsPage() {
             type="search"
             placeholder="Search by document name..."
             value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
+            onChange={(event) => updateSearchInput(event.target.value)}
           />
         </div>
 
