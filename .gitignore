@@ -46,14 +46,15 @@ uploads/
 # =========================
 # PostgreSQL / Docker
 # =========================
-*.sql
 *.dump
+*.sql.gz
+*.backup
+*.bak
 
 # =========================
 # Terraform
 # =========================
 .terraform/
-.terraform.lock.hcl
 *.tfstate
 *.tfstate.*
 crash.log
