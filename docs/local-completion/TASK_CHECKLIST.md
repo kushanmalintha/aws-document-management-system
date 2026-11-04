@@ -79,18 +79,22 @@ A phase should be marked complete only after all mandatory tasks and its accepta
 
 ## 0.4 Baseline Build and Startup
 
-- [ ] Verify required software and versions.
-- [ ] Install backend dependencies.
-- [ ] Install frontend dependencies.
-- [ ] Build or compile the backend where applicable.
-- [ ] Build the frontend.
-- [ ] Start PostgreSQL locally.
-- [ ] Start the backend.
-- [ ] Start the frontend.
-- [ ] Verify backend health endpoint.
-- [ ] Verify frontend availability.
-- [ ] Verify frontend-to-backend connectivity.
-- [ ] Record baseline startup errors and resolve approved issues.
+- [x] Verify required software and versions.
+- [x] Install backend dependencies through the Docker image build.
+- [x] Install frontend dependencies through the Docker image build.
+- [x] Build the backend container image.
+- [x] Build the frontend production bundle through the Docker image build.
+- [x] Start PostgreSQL through Docker Compose.
+- [x] Start the backend through Docker Compose.
+- [x] Start the frontend through Docker Compose.
+- [x] Verify backend health endpoint.
+- [x] Verify frontend availability.
+- [ ] Verify frontend-to-backend application/API connectivity.
+- [ ] Record and review startup logs/errors.
+
+**Status:** Verified for the Docker Compose baseline checks reported by the project owner.
+
+**Verification note:** The project owner reported that environment/version and required env-file checks passed; Docker Compose configuration validation and image build passed; all containers were running; backend and database health checks passed; and the frontend was available. Frontend-to-backend application workflow testing, startup-log review, clean-database migration testing, and automated test suites are not claimed as verified by this task.
 
 ### Phase 0 Acceptance Criteria
 

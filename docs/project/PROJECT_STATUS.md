@@ -23,8 +23,13 @@ The current priority is local completion. No **AWS** resources should be created
 | Docker Compose static inspection | Reviewed |
 | Existing backend test structure | Reviewed |
 | Existing frontend test structure | Reviewed |
-| Runtime startup verification | Not verified |
-| Database migration verification | Not verified |
+| Docker Compose image build | Verified (user-reported) |
+| Docker Compose container startup | Verified (all containers reported running) |
+| Backend health endpoint | Verified (user-reported) |
+| Database health/connectivity endpoint | Verified (user-reported) |
+| Frontend availability | Verified (user-reported) |
+| Frontend-to-backend application workflow | Not independently verified |
+| Clean-database migration verification | Not verified |
 | Full functional verification | Not verified |
 | Security verification | Not verified |
 | Historical Git secret scan | Not verified |
@@ -37,24 +42,15 @@ The current priority is local completion. No **AWS** resources should be created
 
 **Current phase:** Phase 0 — Repository Baseline and Development Environment
 
-**Latest reviewed task:** 0.1 — Repository Inspection
+**Latest completed task:** 0.4 — Baseline Build and Startup
 
-**Task 0.1 status:** Reviewed
+**Task 0.4 status:** Verified (Docker Compose baseline, based on user-reported local results).
 
-The initial repository inspection has been completed. No source-code files were modified during that review.
+The user reported successful environment/version and env-file checks, Docker Compose configuration validation and image build, successful startup with all containers running, passing backend and database health checks, and frontend availability. No application source code was changed during this verification.
 
-**Next task:** 0.2 — Git and Repository Safety
+**Phase 0 status:** In Progress. The successful baseline does not close the remaining repository-safety and environment-configuration acceptance items. Frontend-to-backend application workflows, clean-database migration verification, and automated test execution also remain outstanding.
 
-### Next task objectives
-
-- Inspect the current Git branch and repository state.
-- Review tracked and untracked files.
-- Review ignored files and `.gitignore` behavior.
-- Check for accidentally tracked environment files.
-- Review Git history for potential secrets.
-- Confirm that local storage, generated files, build outputs, and Terraform state are appropriately excluded.
-- Review whether `.terraform.lock.hcl` should be tracked when Terraform dependencies are introduced.
-- Document findings and required corrections.
+**Next action:** Complete the remaining Phase 0 acceptance items before beginning Phase 1, prioritizing the outstanding Git working-tree/history and secret-scan review. Keep the frontend-to-backend workflow and clean-database migration checks outstanding until they are explicitly tested.
 
 Any proposed repository changes must be presented for approval before implementation.
 
@@ -164,11 +160,23 @@ Neither the backend nor frontend test suites have been confirmed as passing.
 
 ## 6. Known Outstanding Verification
 
-The following must not be treated as complete until evidence is collected:
+The Docker Compose baseline build and startup, backend health endpoint, database health endpoint, and frontend availability have been reported as successful.
 
-## Clean-clone setup.
+The following remain outstanding and must not be treated as complete until evidence is collected:
 
-## Local environment configuration. ## Backend dependency installation and startup. ## Frontend dependency installation and startup. ## Docker Compose startup. ## PostgreSQL connectivity. ## Alembic migration from a clean database. ## Backend automated tests. ## Frontend automated tests. ## Authentication and authorization behavior. ## User ownership and data-isolation checks. ## Document upload, download, deletion, and version behavior. ## File validation and storage path security. ## Docker persistence and restart recovery. ## Historical Git secret scanning. ## Final local acceptance.
+- Current local Git working-tree state.
+- Complete historical Git secret scan.
+- Frontend-to-backend application/API workflow verification.
+- Clean-database Alembic migration verification.
+- Clean-clone setup and repeatability.
+- Backend automated tests.
+- Frontend automated tests.
+- Authentication and authorization behavior.
+- User ownership and data-isolation checks.
+- Document upload, download, deletion, and version behavior.
+- File validation and storage path security.
+- Docker persistence and restart recovery.
+- Final local acceptance.
 
 ## 7. Technical Direction
 
@@ -197,6 +205,6 @@ Before pushing, request separate approval.
 
 ## 9. Current Next Action
 
-Proceed with **Phase 0.2 — Git and Repository Safety**.
+Continue closing the remaining **Phase 0 — Repository Baseline and Development Environment** acceptance items.
 
-First inspect the current Git state, tracked files, ignore rules, and repository history. Present findings and any proposed changes before modifying the repository.
+Prioritize the outstanding Git working-tree/history and secret-scan review. Then verify the remaining local setup, frontend-to-backend connectivity, and migration requirements as appropriate. Do not mark Phase 0 complete until its acceptance criteria are satisfied.

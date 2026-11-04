@@ -124,6 +124,62 @@ The next task is **0.2 — Git and Repository Safety**.
 
 ---
 
+## Entry 002 — Baseline Build and Startup
+
+**Date:** 2026-11-04  
+**Phase:** 0 — Repository Baseline and Development Environment  
+**Task:** 0.4 — Baseline Build and Startup  
+**Status:** Verified (Docker Compose baseline)  
+**Activity type:** Local runtime verification
+
+### Objective
+
+Verify that the existing application can be configured, built, started, and accessed locally using the documented Docker Compose setup.
+
+### Verification results
+
+| Check | Method / command area | Result | Evidence |
+|---|---|---|---|
+| Environment versions | Checked required software versions | Passed | User reported that all checks worked |
+| Local environment files | Checked required env-file presence/configuration | Passed | User reported that env-file checks worked |
+| Compose configuration | Docker Compose configuration validation | Passed | User-reported result |
+| Container image build | Docker Compose build | Passed | User-reported result |
+| Container startup | Docker Compose startup and container status | Passed | All containers reported running |
+| Backend health | Backend `/health` endpoint | Passed | User-reported result |
+| Database health | Backend `/health/database` endpoint | Passed | User-reported result |
+| Frontend availability | Local frontend endpoint at `http://localhost:8080` | Passed | User-reported result |
+
+### Scope and limitations
+
+- Results above were supplied by the project owner; raw terminal output was not attached to this execution record.
+- Docker image building exercised the dependency-installation and frontend build steps defined by the Dockerfiles.
+- This task does not claim that the frontend's authenticated application workflows or all frontend-to-backend API operations were tested.
+- A migration from a newly created empty database was not separately verified here.
+- Backend and frontend automated test suites were not run as part of the reported baseline checks.
+- No log excerpts were provided for this task, so detailed log review remains outstanding.
+
+### Files changed
+
+None during the local verification itself.
+
+### Outcome
+
+The Docker Compose baseline build and startup checks are marked **Verified** based on the project owner's reported results. Phase 0 remains **In Progress** because other repository-safety and acceptance checks remain outstanding.
+
+### Commit information for this documentation update
+
+- Commit message: `Record successful local baseline verification`
+- Files included: `docs/local-completion/TASK_CHECKLIST.md`, `docs/project/PROJECT_STATUS.md`, `docs/project/EXECUTION_LOG.md`
+- Commit SHA: To be confirmed in the Git history after this entry is committed.
+- Branch: `main`
+- Push status: Not pushed.
+
+### Next action
+
+Continue with the remaining Phase 0 acceptance items. Do not proceed to AWS implementation.
+
+---
+
 ## Future Entry Template
 
 Copy this template for each subsequent task.
