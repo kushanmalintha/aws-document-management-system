@@ -275,3 +275,48 @@ Use repository documentation to maintain persistent project context:
 ## Record only decisions that have been explicitly agreed upon.
 
 ## Keep proposals separate from approved decisions. ## Do not silently change an existing decision. ## When a decision is superseded, retain the historical record and link to the replacement decision. ## Update the architecture baseline when an agreed decision changes the baseline. ## Keep decisions concise but include enough context to explain why they were made.
+
+---
+
+## Decision 009 — Invalidate All Existing Access Tokens on Logout Using Token Versioning
+
+**Status:** Agreed and implemented in Phase 1  
+**Date:** **2026**-11-06  
+**Category:** Authentication and security
+
+### Context
+
+The application issues stateless JWT access tokens. A logout endpoint that only returns a successful response does not, by itself, invalidate an already issued token before its expiration.
+
+### Decision
+
+Use a per-user token-version value to invalidate previously issued access tokens when the user logs out.
+
+- Persist an integer `token_version` on the user record.
+- Include the current version in newly issued JWTs as the `ver` claim.
+- Validate the token's version against the current user's persisted version during authenticated request processing.
+- Increment the user's token version on logout.
+- Reject tokens whose embedded version no longer matches the user's current version.
+
+### Rationale
+
+- Makes logout invalidate all previously issued access tokens for that user.
+- Avoids maintaining a separate token denylist for individual access tokens.
+- Keeps the mechanism compatible with the existing FastAPI and SQLAlchemy architecture.
+
+### Consequences
+
+- A logout invalidates all access tokens issued with the previous version for that account, not only the token presented to the logout endpoint.
+- The user must authenticate again to obtain a token with the new version.
+- Authentication checks require the current user record so the token version can be compared.
+- The `token_version` column is introduced through Alembic migration `5f7c2a91d4e8`.
+- The project owner reports that the migration and Phase 1 automated tests have been executed locally; detailed output was not included in this documentation update.
+
+### Related files or tasks
+
+- `backend/app/models/user.py`
+- `backend/app/core/security.py`
+- `backend/app/core/dependencies.py`
+- `backend/app/api/auth.py`
+- `backend/app/db/migrations/versions/5f7c2a91d4e8_add_user_token_version.py`
+- Phase 1 — Backend Configuration and Security Foundation

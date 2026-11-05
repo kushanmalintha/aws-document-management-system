@@ -307,3 +307,122 @@ If none, write: `None`.
 ## Record only work that actually happened.
 
 ## Distinguish code inspection from implementation. ## Distinguish implementation from verification. ## Record failed tests and incomplete checks. ## Never invent test results or commit hashes. ## Record approval before implementation. ## Record commits only after they have actually been created. ## Record pushes only after they have actually occurred. ## Keep entries chronological. ## Keep enough detail for a future chat session to continue without relying on previous conversation history.
+
+---
+
+## Entry 004 — Phase 1 Backend Configuration and Security Closure
+
+**Date:** 2026-11-06  
+**Phase:** 1 — Backend Configuration and Security Foundation  
+**Status:** Complete (merged; verification completion reported by project owner)  
+**Activity type:** Implementation closure, local verification, and phase documentation
+
+### Objective
+
+Record the Phase 1 implementation merge into `main`, the project owner's confirmation that the outstanding verification and review follow-ups have been completed, and the transition to Phase 2.
+
+### Implementation and merge
+
+The Phase 1 implementation was created on `feature/phase-1-backend-security` and merged into `main`.
+
+- Implementation commit: `e62eb5be4eb0343dfa1bb6003a8f4dfe4d66bb21`
+- Merge commit on `main`: `25d9ccb3a8492a5ae477b6b83a6fa5e625ce8c81`
+- Implementation commit message: `Implement backend configuration and security hardening`
+- The merge commit has the Phase 1 implementation commit and the previous `main` baseline as parents.
+- No AWS resources were created as part of Phase 1.
+
+### Phase 1 implementation scope
+
+The merged implementation includes:
+
+- Validated application, environment, database, JWT, and upload configuration.
+- Environment-based CORS allowlist configuration.
+- Existing Argon2 password hashing through `pwdlib` retained.
+- JWT issuance and validation with required claims, expiration, HS256, and token-version claim.
+- User token-version persistence and an Alembic migration.
+- Logout invalidation by incrementing the user's token version, invalidating previously issued tokens for that account.
+- Consistent bearer-token authentication handling and inactive-user rejection.
+- Reusable role authorization dependency.
+- Normalized email registration handling and duplicate-registration conflict handling.
+- Request validation for display names and sensitive-field exclusion.
+- Configuration, security, and authentication-dependency test modules.
+
+### Project-owner-reported follow-up completion
+
+After the merge, the project owner confirmed that the following items were completed:
+
+| Follow-up | Reported status | Evidence limitation |
+|---|---|---|
+| Automated test execution for Phase 1 | Completed | Detailed command, test count, pass/fail summary, and raw output were not supplied in this update |
+| Token-version database migration verification | Completed | Database environment, commands, upgrade/downgrade output, and resulting revision were not supplied in this update |
+| Production CORS configuration review finding | Addressed | Exact implementation change and local verification details were not supplied |
+| Registration endpoint test coverage review finding | Addressed | Exact tests added/changed and execution results were not supplied |
+
+These outcomes are recorded as project-owner-reported. The assistant did not independently execute the local test suite or database migration in the project owner's environment.
+
+### Files changed in the Phase 1 implementation commit
+
+The implementation commit changed 15 files:
+
+Modified:
+- `README.md`
+- `backend/.env.example`
+- `backend/app/api/auth.py`
+- `backend/app/api/users.py`
+- `backend/app/core/config.py`
+- `backend/app/core/dependencies.py`
+- `backend/app/core/security.py`
+- `backend/app/main.py`
+- `backend/app/models/user.py`
+- `backend/app/schemas/auth.py`
+- `backend/app/schemas/user.py`
+
+Created:
+- `backend/app/db/migrations/versions/5f7c2a91d4e8_add_user_token_version.py`
+- `backend/tests/test_auth_dependencies.py`
+- `backend/tests/test_config.py`
+- `backend/tests/test_security.py`
+
+### Migration details
+
+- Revision: `5f7c2a91d4e8`
+- Parent revision: `39da3f9f768c`
+- Adds `users.token_version` as a non-null integer with server default `0`.
+- Existing user rows receive the default value.
+- Downgrade removes the column.
+
+The project owner reports that migration verification has since been completed. The Phase 2 task to verify the complete application's migration history against a newly created empty database remains a separate acceptance item.
+
+### Verification and limitations
+
+- GitHub branch metadata was inspected and confirms `main` points to merge commit `25d9ccb3a8492a5ae477b6b83a6fa5e625ce8c81`.
+- The merge commit contains the Phase 1 implementation commit.
+- The project owner reports completion of the Phase 1 test execution, migration verification, and both review follow-ups.
+- Detailed local test and migration output was not attached; those results are not represented as independently reproduced by the assistant.
+- Broader application workflows, complete-schema clean-database migration acceptance, frontend/integration tests, Docker persistence/recovery, and final local acceptance remain assigned to later phases.
+
+### Outcome
+
+**Phase 1 is marked Complete.** Its implementation is merged into `main`, and the project owner reports completion of the Phase 1 verification and review follow-ups.
+
+**Next phase:** Phase 2 — Database Design and Data Integrity. Phase 2 has not yet started.
+
+### Documentation update
+
+The following project records are being synchronized with this closure:
+
+- `docs/project/PROJECT_STATUS.md`
+- `docs/project/EXECUTION_LOG.md`
+- `docs/project/DECISIONS.md`
+- `docs/project/ARCHITECTURE_BASELINE.md`
+- `docs/local-completion/TASK_CHECKLIST.md`
+
+### Commit information
+
+- Commit message: `Document Phase 1 completion and prepare Phase 2.`
+- Branch: `docs/phase-1-closure`
+- Push status: Not pushed.
+
+### Next action
+
+Start Phase 2 repository review from the updated `main` baseline after this documentation update is committed and reviewed.
