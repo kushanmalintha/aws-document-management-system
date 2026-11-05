@@ -13,42 +13,42 @@ def hash_password(password: str) -> str:
     return password_hash.hash(password)
 
 
-def verify_password(
-    plain_password: str,
-    hashed_password: str,
-) -> bool:
-    return password_hash.verify(
-        plain_password,
-        hashed_password,
-    )
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return password_hash.verify(plain_password, hashed_password)
 
 
 def create_access_token(
     user_id: str,
     email: str,
     role: str,
+    token_version: int,
 ) -> str:
-    expires_at = datetime.now(timezone.utc) + timedelta(
-        minutes=settings.jwt_access_token_expire_minutes
-    )
-
+    now = datetime.now(timezone.utc)
     payload = {
         "sub": user_id,
         "email": email,
         "role": role,
-        "exp": expires_at,
+        "iat": now,
+        "exp": now + timedelta(minutes=settings.jwt_access_token_expire_minutes),
+        "ver": token_version,
     }
-
     return jwt.encode(
         payload,
         settings.jwt_secret_key,
-        algorithm=settings.jwt_algorithm,
+        algorithm="HS256",
     )
 
 
 def decode_access_token(token: str) -> dict:
-    return jwt.decode(
+    payload = jwt.decode(
         token,
         settings.jwt_secret_key,
-        algorithms=[settings.jwt_algorithm],
+        algorithms=["HS256"],
+        options={
+            "require": ["sub", "email", "role", "iat", "exp", "ver"],
+        },
     )
+    version = payload.get("ver")
+    if isinstance(version, bool) or not isinstance(version, int) or version < 0:
+        raise jwt.InvalidTokenError("Invalid token version claim")
+    return payload
