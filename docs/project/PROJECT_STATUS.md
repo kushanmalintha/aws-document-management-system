@@ -28,29 +28,30 @@ The current priority is local completion. No **AWS** resources should be created
 | Backend health endpoint | Verified (user-reported) |
 | Database health/connectivity endpoint | Verified (user-reported) |
 | Frontend availability | Verified (user-reported) |
-| Frontend-to-backend application workflow | Not independently verified |
-| Clean-database migration verification | Not verified |
-| Full functional verification | Not verified |
-| Security verification | Not verified |
-| Historical Git secret scan | Not verified |
-| Local acceptance | Not started |
+| Frontend-to-backend application workflow | Deferred to Phase 5/6; not verified in Phase 0 |
+| Startup-log review | Deferred to Phase 6 |
+| Clean-database migration verification | Not verified; planned for Phase 2 |
+| Repository Git inspection and secret scan | Completed (user-reported, no issues reported) |
+| Full application functional verification | Not verified |
+| Application security verification | Not verified |
+| Phase 0 local baseline acceptance | Complete with documented deferrals |
 | AWS implementation | Deferred |
 
 **Important:** The statuses above reflect static repository inspection where indicated. They do not mean that the application has been successfully built, started, or tested.
 
 ## 3. Current Phase and Task
 
-**Current phase:** Phase 0 — Repository Baseline and Development Environment
+**Current phase:** Phase 1 — Backend Configuration and Security Foundation
 
-**Latest completed task:** 0.4 — Baseline Build and Startup
+**Latest completed phase:** Phase 0 — Repository Baseline and Development Environment
 
-**Task 0.4 status:** Verified (Docker Compose baseline, based on user-reported local results).
+**Phase 0 status:** Complete, based on the project owner's reported local Git inspection/Gitleaks results, completed environment configuration work, and successful reported Docker Compose baseline checks.
 
-The user reported successful environment/version and env-file checks, Docker Compose configuration validation and image build, successful startup with all containers running, passing backend and database health checks, and frontend availability. No application source code was changed during this verification.
+The project owner reported that local Git inspection and Gitleaks scans completed without issues. Detailed terminal output and finding summaries were not provided, so the record identifies these as user-reported results rather than independently verified scan output. The project owner also reported successful environment/version and env-file checks, Docker Compose configuration validation and image build, all containers running, passing backend and database health checks, and frontend availability.
 
-**Phase 0 status:** In Progress. The successful baseline does not close the remaining repository-safety and environment-configuration acceptance items. Frontend-to-backend application workflows, clean-database migration verification, and automated test execution also remain outstanding.
+**Explicit deferrals:** Frontend-to-backend application/API workflow verification is deferred to Phase 5/6; detailed startup-log review is deferred to Phase 6. Clean-database migration verification remains planned for Phase 2. Automated test suites, full functional verification, and application security verification remain outstanding.
 
-**Next action:** Complete the remaining Phase 0 acceptance items before beginning Phase 1, prioritizing the outstanding Git working-tree/history and secret-scan review. Keep the frontend-to-backend workflow and clean-database migration checks outstanding until they are explicitly tested.
+**Next action:** Begin Phase 1 — Backend Configuration and Security Foundation. Do not create AWS resources during local completion.
 
 Any proposed repository changes must be presented for approval before implementation.
 
@@ -58,8 +59,8 @@ Any proposed repository changes must be presented for approval before implementa
 
 | Phase | Description | Status |
 |---|---|---|
-| 0 | Repository baseline and development environment | In Progress |
-| 1 | Backend configuration and security foundation | Not Started |
+| 0 | Repository baseline and development environment | Complete (with explicit deferrals) |
+| 1 | Backend configuration and security foundation | In Progress |
 | 2 | Database design and data integrity | Not Started |
 | 3 | File storage and upload security | Not Started |
 | 4 | Backend functional completion | Not Started |
@@ -155,8 +156,8 @@ Neither the backend nor frontend test suites have been confirmed as passing.
 - Environment example files contain placeholder values.
 - The ignore configuration includes rules for environment files and common generated files.
 - Actual local environment values must remain private.
-- Historical Git secret scanning remains pending.
-- Security behavior requires deeper review and testing.
+- The project owner reports that historical Git secret scanning completed without issues; detailed raw output was not provided.
+- Repository-safety checks are complete for Phase 0, while application security behavior requires deeper review and testing.
 
 ## 6. Known Outstanding Verification
 
@@ -164,10 +165,9 @@ The Docker Compose baseline build and startup, backend health endpoint, database
 
 The following remain outstanding and must not be treated as complete until evidence is collected:
 
-- Current local Git working-tree state.
-- Complete historical Git secret scan.
-- Frontend-to-backend application/API workflow verification.
-- Clean-database Alembic migration verification.
+- Frontend-to-backend application/API workflow verification (deferred to Phase 5/6).
+- Detailed startup-log review (deferred to Phase 6).
+- Clean-database Alembic migration verification (planned for Phase 2).
 - Clean-clone setup and repeatability.
 - Backend automated tests.
 - Frontend automated tests.
@@ -205,6 +205,6 @@ Before pushing, request separate approval.
 
 ## 9. Current Next Action
 
-Continue closing the remaining **Phase 0 — Repository Baseline and Development Environment** acceptance items.
+Begin **Phase 1 — Backend Configuration and Security Foundation**.
 
-Prioritize the outstanding Git working-tree/history and secret-scan review. Then verify the remaining local setup, frontend-to-backend connectivity, and migration requirements as appropriate. Do not mark Phase 0 complete until its acceptance criteria are satisfied.
+Keep the deferred frontend-to-backend workflow and startup-log review visible in their assigned later phases. Continue to distinguish user-reported baseline results from checks that have not yet been executed or independently verified.

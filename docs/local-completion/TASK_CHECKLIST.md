@@ -21,6 +21,7 @@
 - [I] Implemented
 - [V] Verified
 - [B] Blocked
+- [D] Deferred to a later phase
 
 A task must not be marked verified until its required checks have actually been executed and evidence recorded.
 
@@ -50,32 +51,38 @@ A phase should be marked complete only after all mandatory tasks and its accepta
 
 ## 0.2 Git and Repository Safety
 
-- [ ] Inspect current branch and working-tree state.
-- [ ] Inspect tracked, untracked, and ignored files.
-- [ ] Review root `.gitignore`.
-- [ ] Review backend and frontend ignore rules.
-- [ ] Check whether local environment files are tracked.
-- [ ] Check whether generated files or local document data are tracked.
-- [ ] Review Git history for accidentally committed secrets.
-- [ ] Run an appropriate secret scan.
-- [ ] Review Terraform state exclusion rules.
-- [ ] Review whether Terraform lock files should be tracked when Terraform dependencies are introduced.
-- [ ] Document any repository safety corrections.
-- [ ] Obtain approval before making corrections.
+- [x] Inspect current branch and working-tree state.
+- [x] Inspect tracked, untracked, and ignored files.
+- [x] Review root `.gitignore`.
+- [x] Review backend and frontend ignore rules.
+- [x] Check whether local environment files are tracked.
+- [x] Check whether generated files or local document data are tracked.
+- [x] Review Git history for accidentally committed secrets.
+- [x] Run an appropriate secret scan.
+- [x] Review Terraform state exclusion rules.
+- [x] Review whether Terraform lock files should be tracked when Terraform dependencies are introduced.
+- [x] Document repository safety corrections.
+- [x] Obtain approval before making corrections.
+
+**Status:** Completed based on the project owner's report that local Git inspection and Gitleaks scans finished without issues.
+
+**Evidence limitation:** Detailed terminal output and Gitleaks findings summary were not supplied in the conversation. This status records the project owner's report; it does not claim independent execution by the assistant.
 
 ## 0.3 Local Environment Configuration
 
-- [ ] Review root `.env.example`.
-- [ ] Review backend `.env.example`.
-- [ ] Review frontend `.env.example`.
-- [ ] Identify all required environment variables.
-- [ ] Confirm local database configuration.
-- [ ] Confirm **JWT** configuration.
-- [ ] Confirm local document storage configuration.
-- [ ] Confirm frontend **API** base **URL**.
-- [ ] Create or verify local `.env` files on the user's machine.
-- [ ] Ensure local secrets are not committed.
-- [ ] Document local setup instructions.
+- [x] Review root `.env.example`.
+- [x] Review backend `.env.example`.
+- [x] Review frontend `.env.example`.
+- [x] Identify required environment variables.
+- [x] Confirm local database configuration.
+- [x] Confirm **JWT** configuration.
+- [x] Confirm local document storage configuration.
+- [x] Confirm frontend **API** base **URL**.
+- [x] Verify local `.env` file setup on the user's machine (user-reported).
+- [x] Ensure local secrets are not committed through the reported Git inspection.
+- [x] Document local setup instructions.
+
+**Status:** Configuration examples and local setup instructions are documented. The project owner reported that required env-file checks passed.
 
 ## 0.4 Baseline Build and Startup
 
@@ -89,8 +96,8 @@ A phase should be marked complete only after all mandatory tasks and its accepta
 - [x] Start the frontend through Docker Compose.
 - [x] Verify backend health endpoint.
 - [x] Verify frontend availability.
-- [ ] Verify frontend-to-backend application/API connectivity.
-- [ ] Record and review startup logs/errors.
+- [D] Verify frontend-to-backend application/API connectivity — deferred to Phase 5/6.
+- [D] Record and review startup logs/errors — deferred to Phase 6.
 
 **Status:** Verified for the Docker Compose baseline checks reported by the project owner.
 
@@ -104,6 +111,8 @@ A phase should be marked complete only after all mandatory tasks and its accepta
 - Backend and frontend can be started locally.
 - PostgreSQL connectivity is verified.
 - Startup instructions are repeatable.
+
+**Phase 0 completion decision (2026-11-04):** Phase 0 is complete based on the repository review, the project owner's report of no issues from local Git inspection and Gitleaks, documented environment configuration, and reported Docker Compose baseline verification. The frontend-to-backend application/API workflow and detailed startup-log review are explicitly deferred to later phases; they are not claimed as verified here. Clean-database migration verification and automated test execution remain in their planned later phases.
 
 ---
 

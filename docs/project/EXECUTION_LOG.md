@@ -170,13 +170,77 @@ The Docker Compose baseline build and startup checks are marked **Verified** bas
 
 - Commit message: `Record successful local baseline verification`
 - Files included: `docs/local-completion/TASK_CHECKLIST.md`, `docs/project/PROJECT_STATUS.md`, `docs/project/EXECUTION_LOG.md`
-- Commit SHA: To be confirmed in the Git history after this entry is committed.
+- Commit SHA: `05b8d8396aeb898d7cd443e6b3a72bc18ae01c5a`.
 - Branch: `main`
 - Push status: Not pushed.
 
 ### Next action
 
 Continue with the remaining Phase 0 acceptance items. Do not proceed to AWS implementation.
+
+---
+
+## Entry 003 — Phase 0 Repository Baseline Completion
+
+**Date:** 2026-11-04  
+**Phase:** 0 — Repository Baseline and Development Environment  
+**Status:** Complete with explicit deferrals  
+**Activity type:** Repository safety review and phase closure
+
+### Objective
+
+Record the project owner's Phase 0.2 local Git inspection and secret-scan results, close Phase 0 based on the agreed acceptance approach, and identify the next phase.
+
+### Phase 0.2 — Git and Repository Safety
+
+The project owner reported that local Git inspection and Gitleaks checks were completed and that there were no issues.
+
+| Check | Result | Evidence / limitation |
+|---|---|---|
+| Local branch and working-tree inspection | Reported complete | Summary reported by project owner; detailed command output not supplied |
+| Tracked, untracked, and ignored file inspection | Reported complete | Summary reported by project owner; detailed command output not supplied |
+| Ignore-rule review | Reviewed | Root `.gitignore` was inspected; prior approved corrections were committed |
+| Historical secret scan | Reported complete; no issues reported | Gitleaks result was summarized by project owner; raw output and finding count were not supplied |
+| Current-directory secret scan | Reported complete; no issues reported | Raw output and finding count were not supplied |
+| Terraform state and lock-file rules | Reviewed | Current `.gitignore` excludes state files and does not ignore `.terraform.lock.hcl` |
+
+These are recorded as project-owner-reported results. The assistant did not independently execute commands on the project owner's machine and does not claim access to the local working tree or raw Gitleaks output.
+
+### Phase 0.3 — Local Environment Configuration
+
+The root, backend, and frontend environment examples and local setup documentation were reviewed and updated in the approved changes. The project owner reported that environment/version and required env-file checks passed. Local secret values were not requested or recorded.
+
+### Phase 0.4 — Baseline Build and Startup
+
+The project owner reported successful Docker Compose configuration validation and image build, all containers running, passing backend and database health checks, and frontend availability. These checks remain marked verified based on user-reported results.
+
+### Explicit deferrals and limitations
+
+- Frontend-to-backend application/API workflow verification is deferred to Phase 5/6.
+- Detailed startup-log review is deferred to Phase 6.
+- Clean-database Alembic migration verification remains planned for Phase 2.
+- Backend and frontend automated tests, end-to-end workflows, full application security checks, persistence/recovery checks, and final local acceptance remain outstanding.
+- Phase 0 completion does not mean the whole application is functionally complete or ready for AWS deployment.
+- No AWS resources were created.
+- No application source files were changed as part of Phase 0 closure.
+
+### Outcome
+
+**Phase 0 is marked Complete** according to the project owner's explicit decision to defer the frontend-to-backend workflow and startup-log review to later phases. The remaining unverified items are documented above and must be addressed in their assigned phases.
+
+**Next phase:** Phase 1 — Backend Configuration and Security Foundation.
+
+### Files changed for Phase 0 documentation
+
+- `docs/local-completion/TASK_CHECKLIST.md`
+- `docs/project/PROJECT_STATUS.md`
+- `docs/project/EXECUTION_LOG.md`
+
+### Commit information
+
+- Commit message: `Complete Phase 0 and proceed to Phase 1.`
+- Branch: `main`
+- Push status: Not pushed.
 
 ---
 
