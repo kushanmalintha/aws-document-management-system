@@ -558,12 +558,19 @@ This is an **AWS** target capability and must not be treated as locally implemen
 
 ### User and application security
 
-- Hash passwords securely.
+- Passwords are hashed using the existing `pwdlib` recommended password-hashing configuration (Argon2).
 - Never log passwords.
-- Use expiring JWTs.
-- Require authentication for protected endpoints.
-- Perform ownership checks on the server.
-- Validate inputs.
+- Issue expiring JWT access tokens using the configured HS256 algorithm.
+- Include and validate the required JWT identity, role, issued-at, expiration, and token-version claims.
+- Compare the token's `ver` claim with the authenticated user's persisted `token_version`.
+- Increment `token_version` on logout so previously issued access tokens for that account are rejected.
+- Require authentication for protected endpoints and reject missing, malformed, expired, incorrectly signed, or revoked tokens.
+- Keep role authorization and resource ownership checks as separate server-side controls.
+- Registration assigns the standard user role server-side; clients cannot grant themselves administrative roles.
+- Normalize email addresses for registration and handle duplicate registration conflicts.
+- Validate request data, including non-empty display names.
+- Validate configuration at application startup, including JWT secret strength, allowed signing algorithm, token lifetime, upload size, and CORS origins.
+- Configure CORS through an explicit origin allowlist. Production deployments must supply trusted frontend origins; do not use wildcard origins with credentialed requests.
 - Restrict file size and allowed file types.
 
 ### S3 security
@@ -585,6 +592,8 @@ This is an **AWS** target capability and must not be treated as locally implemen
 - Do not expose PostgreSQL to `0.0.0.0/0`.
 
 ### Secret security
+
+The local implementation uses environment-based configuration and safe example values. Production secret values must be supplied through the deployment environment or an appropriate secret-management service.
 
 Never commit:
 
