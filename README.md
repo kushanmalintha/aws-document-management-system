@@ -62,7 +62,7 @@ The repository contains example environment files. Create local copies and custo
 | Local file | Example file | Purpose |
 |---|---|---|
 | `.env` | `.env.example` | Docker Compose and PostgreSQL credentials/host ports |
-| `backend/.env` | `backend/.env.example` | FastAPI application, database, JWT, and local storage settings |
+| `backend/.env` | `backend/.env.example` | FastAPI application, database, JWT, CORS, and local storage settings |
 | `frontend/.env` | `frontend/.env.example` | Vite development API URL when running the frontend outside Docker |
 
 Do not overwrite an existing local environment file. If one already exists, retain its values and add any newly required variables manually.
@@ -89,10 +89,10 @@ The frontend environment file is optional for Docker Compose because the contain
 
 ### Set local secrets
 
-The example values `change_me` are placeholders, not secure credentials. Replace them in your local files before running the application:
+The example values are placeholders, not secure credentials. Replace them in your local files before running the application:
 
 - Set a unique, strong `POSTGRES_PASSWORD` in the root `.env`.
-- Set a separate, long, randomly generated `JWT_SECRET_KEY` in `backend/.env`.
+- Set a separate, randomly generated `JWT_SECRET_KEY` in `backend/.env`.
 - Do not reuse database passwords as JWT signing secrets.
 - Keep real credentials and local `.env` files out of Git.
 
@@ -103,6 +103,25 @@ python -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
 Copy the generated value into `backend/.env` as the value of `JWT_SECRET_KEY`. Generate a separate password for PostgreSQL and store it only in the root `.env`.
+
+The backend validates its settings at startup:
+
+- `ENVIRONMENT` must be `development`, `testing`, or `production`.
+- `POSTGRES_PORT` must be between 1 and 65535.
+- `JWT_SECRET_KEY` must be at least 32 characters and must not be a placeholder.
+- `JWT_ALGORITHM` is restricted to `HS256`.
+- `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` must be between 1 and 1440.
+- `MAX_UPLOAD_SIZE_BYTES` must be positive.
+
+### CORS configuration
+
+Set `CORS_ALLOWED_ORIGINS` in `backend/.env` as a JSON array of explicit origins, for example:
+
+```env
+CORS_ALLOWED_ORIGINS=["http://localhost:5173","http://127.0.0.1:5173","http://localhost:8080","http://127.0.0.1:8080"]
+```
+
+These defaults cover the local Vite development server and Docker-served frontend. For a deployed environment, replace them with the exact trusted frontend origins using HTTPS. Wildcard origins are not accepted because credentialed CORS is enabled.
 
 ### Database connection settings
 
@@ -183,6 +202,9 @@ This keeps the database and uploaded documents in their named volumes for the ne
 - Never commit `.env` files or real credentials.
 - Keep `.env.example` files limited to placeholders and non-sensitive defaults.
 - Do not commit AWS access keys, private keys, database dumps, or Terraform state.
+- Registration always assigns the standard `user` role; role assignment is not accepted from public registration input.
+- Passwords are hashed using the configured recommended password-hashing implementation.
+- Logging out increments the account's token version and invalidates all access tokens issued before that logout. This is account-wide rather than per-device logout.
 - Use local configuration only for local development. Cloud secrets and permissions will be handled through appropriate AWS services during the later AWS implementation phase.
 
 ## Project Development Approach
