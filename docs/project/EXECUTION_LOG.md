@@ -426,3 +426,60 @@ The following project records are being synchronized with this closure:
 ### Next action
 
 Start Phase 2 repository review from the updated `main` baseline after this documentation update is committed and reviewed.
+
+
+---
+
+## Entry 005 — Phase 2 Database Design and Data Integrity Completion
+
+**Date:** 2026-11-10
+
+### Objective
+
+Record the Phase 2 database integrity implementation, its merge into `main`, the project owner's local verification report, and the transition to Phase 3.
+
+### Implementation and merge
+
+- Feature branch: `feature/phase-2-database-integrity-impl`
+- Implementation commit: `66b0c94a93cfa82a6b5b90eb3e6be88b3b1b9a1c`
+- Implementation commit message: `Implement database integrity and ownership constraints`
+- Pull request: [#3](https://github.com/kushanmalintha/aws-document-management-system/pull/3)
+- Merge commit on `main`: `ea26ff9281f9554a445542f81f883557f544d725`
+- The remote feature branch was subsequently confirmed absent from the branch listing.
+
+### Phase 2 implementation scope
+
+The implementation changed 11 files:
+
+Modified:
+- `backend/app/db/database.py`
+- `backend/app/db/migrations/env.py`
+- `backend/app/models/folder.py`
+- `backend/app/models/document.py`
+- `backend/app/models/document_version.py`
+- `backend/app/models/activity.py`
+- `backend/app/models/document_share.py`
+- `backend/app/models/user.py`
+
+Created:
+- `backend/app/db/migrations/versions/7b2c1f8e4a91_enforce_database_integrity.py`
+- `backend/tests/test_database_config.py`
+- `backend/tests/test_database_integrity.py`
+
+The work centralizes PostgreSQL URL construction, aligns Alembic with the application database configuration, adds composite ownership constraints and database-level checks, aligns relevant server defaults and nullability, and introduces migration preflight validation for invalid existing data. Folder deletion semantics preserve documents while clearing their folder reference.
+
+### Verification and limitations
+
+The project owner reports that local verification completed with **24/24 checks passing and no issues found**. This is recorded as project-owner-reported. The assistant did not independently run the tests, migration commands, or local Docker environment during this documentation update; raw command output was not supplied here.
+
+The 24/24 result should not be interpreted as completion of later-phase application workflows, frontend/integration testing, Docker recovery, or final local acceptance.
+
+### Outcome
+
+**Phase 2 is recorded as Complete** based on the merged implementation and the project owner's reported local verification.
+
+No AWS resources or AWS integration were introduced by Phase 2.
+
+### Next action
+
+Proceed to **Phase 3 — File Storage and Upload Security**. Review the existing storage implementation, upload validation, download authorization, safe path handling, deletion lifecycle, and storage tests before proposing any Phase 3 code changes. Keep the work local-first and obtain approval before modifying files.

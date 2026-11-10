@@ -283,6 +283,8 @@ Do not assume that a previous conversation's proposed changes were implemented, 
 
 The current priority is:
 
-**Complete and verify the application locally before beginning **AWS** implementation.**
+**Phase 2 — Database Design and Data Integrity is complete. Proceed with Phase 3 — File Storage and Upload Security.**
 
-The project owner must approve repository changes, commits, and pushes separately.
+Continue local-first development. Do not introduce AWS resources or integration during Phase 3. Before starting, inspect the current repository state and Phase 3 checklist, review the existing storage implementation and its dependencies, then present findings and proposed scope for approval.
+
+The project owner must approve repository changes, commits, pushes, merges, and any AWS transition separately.
