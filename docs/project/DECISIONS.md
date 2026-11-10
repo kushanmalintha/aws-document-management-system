@@ -368,3 +368,49 @@ Use PostgreSQL constraints to enforce the ownership relationships and core data 
 - `backend/tests/test_database_config.py`
 - `backend/tests/test_database_integrity.py`
 - Phase 2 — Database Design and Data Integrity
+
+---
+
+## Decision 011 — Retain Deleted Documents and Physical Files Using Soft Deletion
+
+**Status:** Agreed and implemented in Phase 3  
+**Date:** 2026-11-11  
+**Category:** Document lifecycle and storage retention
+
+### Context
+
+The document lifecycle needs a predictable deletion behavior that preserves document metadata and version history while preventing normal access to documents that a user has deleted. The local storage implementation must not silently remove physical files as a side effect of the normal document-delete operation.
+
+### Decision
+
+Use soft deletion for documents and retain their physical files.
+
+- Set the document status to `DELETED` when the owner deletes it.
+- Set the document's `deleted_at` timestamp.
+- Exclude deleted documents from normal document listings.
+- Reject normal document and version download access for deleted documents.
+- Retain the document metadata and version-history records in PostgreSQL.
+- Retain the physical document and version files in local storage.
+- Do not expose permanent deletion or run automatic physical-file cleanup as part of Phase 3.
+
+### Rationale
+
+- Preserves document metadata and version history for auditability and future lifecycle decisions.
+- Prevents normal application workflows from exposing a deleted document.
+- Avoids an irreversible physical-file deletion as part of the ordinary delete operation.
+- Keeps the behavior explicit and consistent between database state and normal application access.
+
+### Consequences
+
+- A deleted document remains represented in the database with status `DELETED` and a populated `deleted_at` value.
+- Normal listings and downloads must consistently exclude or reject deleted documents.
+- Physical files remain in local storage after soft deletion and therefore continue to consume disk space.
+- Permanent deletion, retention expiry, and orphan-file cleanup require a separate future decision and implementation.
+- Phase 3 manual testing must verify both access restrictions and retention of metadata, versions, and physical files.
+
+### Related files or tasks
+
+- `backend/app/api/documents.py`
+- `backend/app/models/document.py`
+- `backend/app/infrastructure/local_storage.py`
+- Phase 3 — File Storage and Upload Security

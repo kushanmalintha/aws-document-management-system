@@ -630,6 +630,22 @@ Prefer service roles:
 
 Avoid permanent credentials in application code or containers.
 
+### Phase 3 implementation note — local file storage and upload security
+
+The Phase 3 implementation retains the local-first modular-monolith architecture and the existing storage service boundary. Document binaries remain outside PostgreSQL.
+
+- The local filesystem implementation uses generated storage keys rather than user-supplied filenames as paths.
+- Storage-key validation rejects absolute paths, traversal components, malformed keys, and symlink paths. File creation is exclusive so an existing object is not overwritten. Writes flush and sync completed content and attempt to remove partial files after write failures.
+- Backend upload configuration controls allowed extensions, maximum file size, and maximum filename length. Upload inspection counts actual bytes, rejects empty and oversized files, performs basic signature/container checks for supported types, and calculates SHA-256 checksums for initial and subsequent versions.
+- The frontend's allowed-extension list is centralized for its file-picker hint and client-side feedback. The backend remains authoritative and independently validates uploads.
+- Downloads retain authentication and ownership checks, use the storage boundary to validate stored keys, stream the content as an attachment, and include `X-Content-Type-Options: nosniff`.
+- Version uploads use the shared validation path, retain earlier versions, calculate checksums, and require the same extension as the existing document because the current document metadata model stores the filename and content type at document level.
+- Document deletion is soft deletion. It sets status to `DELETED` and records `deleted_at`; normal listings and downloads exclude the document, while metadata, version history, and physical files are retained.
+
+**Scope and limitations:** Content checks are basic signature/container checks, not antivirus scanning or complete file-format validation. Permanent deletion and automated storage cleanup are not included. The Phase 3 implementation does not add a database migration or AWS/S3 integration. Manual local verification remains a separate acceptance activity.
+
+Implementation commit on `main`: `d6e8f4728953e4f61d680eb8c6b643a72275e9c0` (`Harden local document storage and upload validation`).
+
 ## 16. API Baseline
 
 The original report proposes these endpoint groups.

@@ -1,6 +1,10 @@
 # AWS Document Management System — Project Status
 
-**Last updated:** **2026**-11-10 **Repository:** [https://github.com/kushanmalintha/aws-document-management-system](https://github.com/kushanmalintha/aws-document-management-system) **Primary branch inspected:** `main` **Current development stage:** Local completion ****AWS** implementation:** Deferred
+**Last updated:** 2026-11-11  
+**Repository:** [https://github.com/kushanmalintha/aws-document-management-system](https://github.com/kushanmalintha/aws-document-management-system)  
+**Primary branch inspected:** `main`  
+**Current development stage:** Local completion — Phase 3 manual verification  
+**AWS implementation:** Deferred
 
 ---
 
@@ -34,6 +38,7 @@ The current priority is local completion. No **AWS** resources should be created
 | Phase 1 token-version migration verification | Completed (project-owner-reported; command/output not supplied) |
 | Phase 1 review follow-ups (production CORS and registration test coverage) | Reported addressed by project owner; details not supplied |
 | Phase 2 database configuration, ownership constraints, and integrity checks | Complete (implementation merged; 24/24 local checks project-owner-reported) |
+| Phase 3 local storage, upload validation, download security, version handling, and soft-delete implementation | Implemented and merged into `main`; manual verification pending |
 | Repository Git inspection and secret scan | Completed (user-reported, no issues reported) |
 | Full application functional verification | Not verified |
 | Broader backend/frontend/integration test coverage | Outstanding in later phases |
@@ -45,7 +50,7 @@ The current priority is local completion. No **AWS** resources should be created
 
 ## 3. Current Phase and Task
 
-**Current phase:** Phase 3 — File Storage and Upload Security (next phase)
+**Current phase:** Phase 3 — File Storage and Upload Security (implementation merged; manual verification in progress)
 
 **Latest completed phase:** Phase 2 — Database Design and Data Integrity
 
@@ -57,9 +62,11 @@ The Phase 1 merge is represented by merge commit 25d9ccb3a8492a5ae477b6b83a6fa5e
 
 **Phase 2 status:** The Phase 2 implementation was merged into `main` in merge commit `ea26ff9281f9554a445542f81f883557f544d725`, incorporating implementation commit `66b0c94a93cfa82a6b5b90eb3e6be88b3b1b9a1c`. The project owner reports local verification of **24/24 checks with no issues found**. This result is project-owner-reported; the assistant did not independently execute the local test suite or database migration commands.
 
-**Remaining deferrals:** Frontend-to-backend application/API workflow verification remains assigned to Phase 5/6; detailed startup-log review remains assigned to Phase 6. Broader backend, frontend, integration, reliability, and final acceptance testing remain in their later phases. Phase 3 storage and upload security work has not started.
+**Phase 3 status:** The file storage and upload security implementation was merged into `main` in commit `d6e8f4728953e4f61d680eb8c6b643a72275e9c0` (`Harden local document storage and upload validation`). It includes filesystem path safety and non-overwrite behavior, centralized server-side upload validation, basic content signature/container checks, SHA-256 checksums, secure streaming downloads, version validation, and the agreed soft-delete behavior that retains metadata, versions, and physical files. The project owner is preparing to perform manual local functionality testing; those checks and the full relevant automated test execution are not yet recorded as passed.
 
-**Next action:** Begin Phase 3 — File Storage and Upload Security. Do not create AWS resources during local completion.
+**Remaining deferrals:** Frontend-to-backend application/API workflow verification remains assigned to Phase 5/6; detailed startup-log review remains assigned to Phase 6. Broader backend, frontend, integration, reliability, and final acceptance testing remain in their later phases. Phase 3 manual upload, download, version, ownership, soft-delete, storage-safety, and failure scenarios remain outstanding until evidence is recorded.
+
+**Next action:** Complete the Phase 3 manual testing checklist and record actual outcomes before deciding Phase 3 acceptance. Do not begin Phase 4 or create AWS resources during local completion.
 
 Any proposed repository changes must be presented for approval before implementation.
 
@@ -70,7 +77,7 @@ Any proposed repository changes must be presented for approval before implementa
 | 0 | Repository baseline and development environment | Complete (with explicit deferrals) |
 | 1 | Backend configuration and security foundation | Complete (merged; owner-reported verification completed) |
 | 2 | Database design and data integrity | Complete (merged; 24/24 checks project-owner-reported) |
-| 3 | File storage and upload security | Not Started — next phase |
+| 3 | File storage and upload security | Implementation merged; manual verification and acceptance pending |
 | 4 | Backend functional completion | Not Started |
 | 5 | Frontend functional completion and security | Not Started |
 | 6 | API contract, error handling, and observability | Not Started |
@@ -181,8 +188,9 @@ The following remain outstanding and must not be treated as complete until evide
 - Frontend automated tests.
 - Broader authentication, authorization, and integrated user-isolation workflows in their assigned later phases.
 - User ownership and data-isolation checks.
-- Document upload, download, deletion, and version behavior.
-- File validation and storage path security.
+- Phase 3 manual verification of upload/download behavior, version workflows, soft-delete retention, ownership enforcement, and storage path security.
+- Full relevant backend unit and PostgreSQL-backed integration test execution for Phase 3.
+- Safe failure testing for storage and database failure scenarios.
 - Docker persistence and restart recovery.
 - Final local acceptance.
 
@@ -213,8 +221,10 @@ Before pushing, request separate approval.
 
 ## 9. Current Next Action
 
-Begin **Phase 3 — File Storage and Upload Security**.
+Complete **Phase 3 — File Storage and Upload Security** manual verification using the checklist in `docs/local-completion/TASK_CHECKLIST.md`. Record actual outcomes, failed/skipped checks, and any corrective work. Mark Phase 3 accepted only after the required manual and automated verification evidence has been reviewed.
+
+Phase 3 implementation is merged into `main` in commit `d6e8f4728953e4f61d680eb8c6b643a72275e9c0`; implementation merge does not itself establish runtime verification or acceptance.
 
 Phase 1 implementation is merged into main; the project owner reports that its automated test execution, token-version migration verification, and review follow-ups are complete. Detailed local outputs were not supplied, so retain the distinction between project-owner-reported results and checks independently reproduced during repository review.
 
-Keep the deferred frontend-to-backend workflow and startup-log review visible in their assigned later phases.
+Keep the deferred frontend-to-backend workflow and startup-log review visible in their assigned later phases. Do not begin Phase 4 until Phase 3 acceptance is explicitly confirmed.
