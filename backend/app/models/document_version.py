@@ -3,6 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     BigInteger,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Integer,
@@ -18,55 +19,35 @@ from app.db.database import Base
 
 class DocumentVersion(Base):
     __tablename__ = "document_versions"
-
     __table_args__ = (
         UniqueConstraint(
-            "document_id",
-            "version_number",
-            name="uq_document_version_number",
+            "document_id", "version_number", name="uq_document_version_number"
+        ),
+        CheckConstraint(
+            "version_number >= 1",
+            name="ck_document_versions_version_number_positive",
+        ),
+        CheckConstraint(
+            "size_bytes > 0",
+            name="ck_document_versions_size_bytes_positive",
         ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-
     document_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("documents.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-
-    version_number: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-    )
-
-    s3_key: Mapped[str] = mapped_column(
-        String(1024),
-        nullable=False,
-    )
-
-    size_bytes: Mapped[int] = mapped_column(
-        BigInteger,
-        nullable=False,
-    )
-
-    checksum: Mapped[str | None] = mapped_column(
-        String(255),
-        nullable=True,
-    )
-
+    version_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    s3_key: Mapped[str] = mapped_column(String(1024), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    checksum: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
-    document = relationship(
-        "Document",
-        back_populates="versions",
-    )
+    document = relationship("Document", back_populates="versions")
