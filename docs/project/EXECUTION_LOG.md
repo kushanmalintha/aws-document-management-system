@@ -483,3 +483,103 @@ No AWS resources or AWS integration were introduced by Phase 2.
 ### Next action
 
 Proceed to **Phase 3 — File Storage and Upload Security**. Review the existing storage implementation, upload validation, download authorization, safe path handling, deletion lifecycle, and storage tests before proposing any Phase 3 code changes. Keep the work local-first and obtain approval before modifying files.
+
+---
+
+## Entry 006 — Phase 3 File Storage and Upload Security Implementation
+
+**Date:** 2026-11-11  
+**Phase:** 3 — File Storage and Upload Security  
+**Status:** Implementation merged into `main`; manual local verification pending  
+**Activity type:** Implementation, merge record, and phase documentation
+
+### Objective
+
+Record the Phase 3 local filesystem storage hardening, upload validation, secure download behavior, version handling, and the agreed soft-delete retention lifecycle.
+
+### Implementation and merge
+
+- Main implementation commit: `d6e8f4728953e4f61d680eb8c6b643a72275e9c0`
+- Commit message: `Harden local document storage and upload validation`
+- Commit URL: https://github.com/kushanmalintha/aws-document-management-system/commit/d6e8f4728953e4f61d680eb8c6b643a72275e9c0
+- The project owner confirmed that the Phase 3 implementation is now on the up-to-date `main` branch and deleted the feature branch after the merge.
+- No Phase 3 PR number is recorded in this entry because it was not established in the available merge record.
+
+### Implementation scope
+
+The implementation commit changed 12 files.
+
+Modified:
+- `backend/.env.example`
+- `backend/app/api/documents.py`
+- `backend/app/core/config.py`
+- `backend/app/infrastructure/local_storage.py`
+- `backend/tests/test_config.py`
+- `backend/tests/test_local_storage.py`
+- `frontend/src/pages/DocumentDetailsPage.jsx`
+- `frontend/src/pages/DocumentsPage.jsx`
+
+Created:
+- `backend/app/services/upload_validation.py`
+- `backend/tests/test_document_storage.py`
+- `backend/tests/test_document_upload_validation.py`
+- `frontend/src/config/documentUpload.js`
+
+### Implementation summary
+
+**Local storage safety**
+- Validate storage keys and reject absolute paths, traversal components, malformed path segments, and symlink paths.
+- Use exclusive file creation to prevent overwrites.
+- Use restrictive file permissions where supported, flush and sync completed writes, and attempt cleanup of partial files after write failures.
+- Validate storage keys for reads and avoid following symlinks where supported by the platform.
+
+**Upload validation**
+- Centralize upload filename normalization and validation.
+- Validate configured allowed extensions and maximum filename length.
+- Count actual uploaded bytes and enforce the configured size limit.
+- Reject empty files and basic extension/content mismatches.
+- Apply basic signature/container checks for supported file formats.
+- Calculate SHA-256 checksums for initial uploads and subsequent versions.
+- Reuse the validation path for initial and version uploads.
+
+**Downloads and versions**
+- Preserve authenticated ownership checks and deleted-document restrictions.
+- Validate stored keys through the storage service.
+- Stream downloads as attachments and retain the `X-Content-Type-Options: nosniff` response header.
+- Keep version files under generated unique keys and preserve prior version records/files.
+- Require a version upload to use the document's existing extension.
+
+**Deletion lifecycle**
+- Implement the agreed soft-delete behavior: set status to `DELETED` and populate `deleted_at`.
+- Exclude deleted documents from normal listings and reject normal download access.
+- Retain document metadata, version history, and physical files.
+- Do not add permanent deletion or automatic file cleanup.
+
+**Frontend**
+- Centralize allowed document extensions for the upload file-picker hint and client-side extension feedback.
+- Remove the duplicated hard-coded 10 MiB checks from the upload pages; the backend enforces the configured size and content checks.
+
+### Verification and limitations
+
+The commit adds or updates backend tests for local storage safety, upload validation, and selected document storage lifecycle behavior. The existence of these tests is an implementation fact; their successful execution is not asserted by this entry.
+
+The project owner is now preparing to perform manual local functionality testing. The following therefore remain unverified until test evidence is recorded:
+
+- Actual local upload/download behavior across supported file types.
+- Frontend/backend upload behavior and configured extension alignment.
+- Version upload, retention, download, and cross-user access workflows.
+- Soft-delete listing, download rejection, metadata/version retention, and physical-file retention in the running environment.
+- Full backend unit and PostgreSQL-backed integration test results.
+- Storage failure and database failure behavior in the local environment.
+
+Basic content signature/container checks are not antivirus scanning or complete file-format validation. The implementation does not include a database migration, permanent deletion, automatic cleanup, or AWS/S3 integration.
+
+### Outcome
+
+**Phase 3 implementation is recorded as merged into `main`. Phase 3 acceptance remains pending** until the project owner completes the planned manual testing and records the required automated test results. Do not interpret the merge itself as proof of runtime correctness or full local acceptance.
+
+No AWS resources or AWS integration were introduced by Phase 3.
+
+### Next action
+
+Complete the Phase 3 manual testing checklist in `docs/local-completion/TASK_CHECKLIST.md`, record actual results and any defects, and decide Phase 3 acceptance only after reviewing that evidence. Do not begin Phase 4 until Phase 3 acceptance is explicitly confirmed.

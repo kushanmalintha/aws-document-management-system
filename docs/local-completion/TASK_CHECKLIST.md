@@ -254,68 +254,108 @@ A phase should be marked complete only after all mandatory tasks and its accepta
 
 # Phase 3 — File Storage and Upload Security
 
-**Objective:** Verify local document storage, upload validation, secure file access, and storage lifecycle behavior.
+**Objective:** Implement and locally verify safe document storage, upload validation, secure file access, version handling, and the agreed document-retention lifecycle.
+
+**Implementation status:** Implemented and merged into `main` in commit `d6e8f4728953e4f61d680eb8c6b643a72275e9c0`.
+
+**Verification status:** Manual functional testing by the project owner is pending. Implementation and automated test additions must not be treated as proof that all manual acceptance scenarios have passed.
 
 ## 3.1 Storage Architecture
 
-- [ ] Review storage service abstraction.
-- [ ] Review local storage implementation.
-- [ ] Verify storage directory configuration.
-- [ ] Verify generated storage identifiers.
-- [ ] Confirm user-provided filenames are not trusted as storage paths.
-- [ ] Review storage/database consistency behavior.
-- [ ] Confirm the storage boundary can support future S3 integration.
+- [I] Local filesystem storage remains behind the existing storage service boundary.
+- [I] Generated storage keys are used; user-provided filenames are not used as storage paths.
+- [I] Storage-key validation rejects absolute paths, traversal components, malformed separators, and symlink paths.
+- [I] File creation uses exclusive creation to prevent overwrites.
+- [I] Storage writes use restrictive file permissions where supported, flush and sync completed writes, and remove partial files after a write failure.
+- [I] Storage reads reject unsafe keys and open files without following symlinks where the platform supports it.
+- [ ] Manually verify storage directory configuration and physical file placement.
+- [ ] Manually verify duplicate-name uploads do not overwrite existing files.
+- [ ] Manually exercise traversal, absolute-path, and symlink rejection on the local environment.
 
 ## 3.2 Upload Validation
 
-- [ ] Verify maximum file size.
-- [ ] Verify allowed file types.
-- [ ] Review content-type validation.
-- [ ] Review filename validation.
-- [ ] Review empty-file handling.
-- [ ] Review malformed upload handling.
-- [ ] Review duplicate filename behavior.
-- [ ] Check for path traversal.
-- [ ] Check for unsafe file overwrite behavior.
-- [ ] Review temporary file handling if used.
+- [I] Allowed document extensions are loaded from backend configuration and normalized/validated.
+- [I] Maximum upload size is enforced by inspecting actual file bytes.
+- [I] Maximum filename length is configurable, with a default of 255 characters and an upper bound of 255.
+- [I] Empty files and malformed filenames are rejected.
+- [I] Basic content-signature/container checks are applied to supported formats.
+- [I] SHA-256 checksums are calculated for initial uploads and uploaded versions.
+- [I] Upload validation is shared by initial document uploads and version uploads.
+- [I] Frontend allowed extensions are centralized in a shared configuration module; server-side validation remains authoritative.
+- [ ] Manually test valid files for every supported extension.
+- [ ] Manually test unsupported extensions, extension/content mismatches, empty files, oversized files, and overlong filenames.
+- [ ] Verify rejected uploads do not leave document records or partial stored files.
+- [ ] Confirm frontend extension hints match the backend's configured allowed extensions.
+
+**Validation limitation:** Signature/container checks are basic format checks. They are not antivirus scanning and do not prove that a file is safe or fully valid according to its complete format specification.
 
 ## 3.3 Download Security
 
-- [ ] Verify authentication is required.
-- [ ] Verify ownership checks.
-- [ ] Verify unauthorized users cannot access another user's files.
-- [ ] Verify stored paths are resolved safely.
-- [ ] Verify missing-file handling.
-- [ ] Verify response content type and filename behavior.
+- [I] Existing authentication and document ownership checks are retained.
+- [I] Deleted documents are rejected by normal download access.
+- [I] Stored keys are validated by the storage boundary; invalid keys are handled as unavailable stored content.
+- [I] Downloads remain streamed and use attachment content disposition.
+- [I] Download responses include `X-Content-Type-Options: nosniff`.
+- [I] Missing stored files are handled as not found.
+- [ ] Manually verify downloads reproduce the original file bytes and filename.
+- [ ] Manually verify unauthenticated and cross-user document/version downloads are rejected.
+- [ ] Manually verify missing-file and deleted-document download behavior.
 
-## 3.4 Delete and Storage Lifecycle
+## 3.4 Version Management
 
-- [ ] Verify document deletion.
-- [ ] Verify stored file deletion.
-- [ ] Review partial-failure behavior.
-- [ ] Review version deletion behavior.
-- [ ] Review orphaned-file handling.
-- [ ] Review metadata deletion and storage deletion consistency.
+- [I] Version uploads use the shared filename and content validation.
+- [I] Version uploads must use the document's existing extension.
+- [I] Version uploads calculate and persist SHA-256 checksums.
+- [I] New version storage keys are generated uniquely; existing versions are retained.
+- [ ] Manually verify initial and subsequent version uploads.
+- [ ] Manually verify previous versions remain downloadable and match their original contents.
+- [ ] Manually verify different-extension and cross-user version access are rejected.
 
-## 3.5 Storage Tests
+## 3.5 Deletion and Retention Lifecycle
 
-- [ ] Test binary file save/read.
-- [ ] Test overwrite behavior.
-- [ ] Test delete behavior.
-- [ ] Test missing-file behavior.
-- [ ] Test path traversal rejection.
-- [ ] Test large file handling.
-- [ ] Test invalid file handling.
-- [ ] Test concurrent or conflicting storage operations where relevant.
+**Agreed behavior — soft deletion with file retention:**
+
+- [I] Deletion changes the document status to `DELETED` and sets `deleted_at`.
+- [I] Normal document listings exclude deleted documents.
+- [I] Normal download access to deleted documents is rejected.
+- [I] Document metadata and version history are retained.
+- [I] Physical stored files are retained; the delete operation does not remove them.
+- [ ] Manually verify deleted documents disappear from normal listings.
+- [ ] Manually verify metadata, version history, and physical files remain after deletion.
+- [ ] Manually verify normal document and version downloads are rejected after deletion.
+
+Permanent deletion, physical-file cleanup, and automated orphan cleanup are not part of the agreed Phase 3 behavior.
+
+## 3.6 Automated Tests and Failure Scenarios
+
+- [I] Local storage tests cover binary save/read, non-overwrite behavior, missing-file handling, traversal/absolute-path rejection, symlink rejection where supported, and partial-write cleanup.
+- [I] Upload-validation tests cover filename normalization, disallowed extensions, empty/oversized files, basic content mismatch, checksums, and selected supported formats.
+- [I] Storage lifecycle tests cover soft-delete retention, deleted download rejection, cross-user download rejection, invalid stored keys, and download response headers.
+- [ ] Execute the backend unit test suite locally and record the exact result.
+- [ ] Execute the relevant PostgreSQL-backed integration tests against a dedicated disposable test database.
+- [ ] Manually exercise storage-unavailable, missing-file, and database-failure scenarios where safely reproducible.
+- [ ] Record failed tests, skipped tests, and platform-dependent symlink-test behavior.
+
+### Phase 3 Implementation Record
+
+- Main implementation commit: `d6e8f4728953e4f61d680eb8c6b643a72275e9c0`.
+- Commit message: `Harden local document storage and upload validation`.
+- Implementation includes backend storage hardening and upload validation, backend tests, shared frontend upload-extension configuration, and upload UI updates.
+- No database migration, permanent deletion mechanism, antivirus scanning, or AWS integration was introduced.
 
 ### Phase 3 Acceptance Criteria
 
-- Files are stored outside the database.
-- Upload validation is enforced.
-- Storage paths cannot be manipulated to access arbitrary files.
-- Downloads require valid access.
-- Deletion and version behavior are predictable.
-- Storage tests pass.
+Implementation is recorded as merged, but Phase 3 must not be marked fully accepted until the pending local manual checks and required automated test execution have been completed and their results recorded.
+
+- [I] Local storage boundary and path-safety implementation.
+- [I] Server-side upload validation and checksum calculation.
+- [I] Secure document/version download behavior and soft-delete retention implementation.
+- [I] Phase 3-focused automated test cases added.
+- [ ] Backend automated tests executed successfully and evidence recorded.
+- [ ] Required PostgreSQL integration tests executed successfully and evidence recorded.
+- [ ] Manual upload, download, version, ownership, and soft-delete scenarios passed.
+- [ ] Storage security and failure-handling scenarios reviewed.
+- [ ] Phase 3 acceptance decision recorded after evidence review.
 
 ---
 

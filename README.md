@@ -169,13 +169,13 @@ This keeps the database and uploaded documents in their named volumes for the ne
 - User login
 - User profile
 - Folder management
-- Document upload
+- Document upload with server-side extension, size, filename, and basic content-signature validation
 - Document viewing
 - Document search
 - Document filtering
-- Document download
-- Document deletion
-- Document versions
+- Authenticated document downloads with ownership checks
+- Document version uploads and retained version history
+- Soft deletion that retains document metadata, versions, and physical files
 - Activity tracking
 - Document processing status
 - Optional document sharing
@@ -205,6 +205,10 @@ This keeps the database and uploaded documents in their named volumes for the ne
 - Registration always assigns the standard `user` role; role assignment is not accepted from public registration input.
 - Passwords are hashed using the configured recommended password-hashing implementation.
 - Logging out increments the account's token version and invalidates all access tokens issued before that logout. This is account-wide rather than per-device logout.
+- Local document binaries are stored outside PostgreSQL using generated storage keys and a filesystem storage boundary.
+- Storage keys are validated to reject traversal, absolute paths, and symlink paths; storage writes do not overwrite existing files.
+- Upload validation checks configured extensions, filename length, actual file size, empty files, and basic content signatures/container structure. This is not antivirus scanning or complete file-format validation.
+- Document deletion is soft deletion: normal listings and downloads exclude deleted documents, while metadata, version history, and physical files are retained.
 - Use local configuration only for local development. Cloud secrets and permissions will be handled through appropriate AWS services during the later AWS implementation phase.
 
 ## Project Development Approach
