@@ -30,6 +30,7 @@ class Settings(BaseSettings):
 
     local_storage_path: str = "local_storage"
     max_upload_size_bytes: int = 10 * 1024 * 1024
+    max_upload_filename_length: int = 255
 
     allowed_document_extensions: tuple[str, ...] = (
         ".pdf", ".txt", ".doc", ".docx", ".xls", ".xlsx",
@@ -91,6 +92,26 @@ class Settings(BaseSettings):
         if value <= 0:
             raise ValueError("MAX_UPLOAD_SIZE_BYTES must be positive")
         return value
+
+    @field_validator("max_upload_filename_length")
+    @classmethod
+    def validate_upload_filename_length(cls, value: int) -> int:
+        if not 1 <= value <= 255:
+            raise ValueError("MAX_UPLOAD_FILENAME_LENGTH must be between 1 and 255")
+        return value
+
+    @field_validator("allowed_document_extensions")
+    @classmethod
+    def validate_allowed_extensions(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        normalized = tuple(item.strip().lower() for item in value)
+        if not normalized or any(
+            not item.startswith(".") or len(item) < 2 or "/" in item or chr(92) in item
+            for item in normalized
+        ):
+            raise ValueError("ALLOWED_DOCUMENT_EXTENSIONS must contain valid dotted extensions")
+        if len(set(normalized)) != len(normalized):
+            raise ValueError("ALLOWED_DOCUMENT_EXTENSIONS must not contain duplicates")
+        return normalized
 
     @field_validator("cors_allowed_origins")
     @classmethod

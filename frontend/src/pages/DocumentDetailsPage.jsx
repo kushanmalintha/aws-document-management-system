@@ -237,11 +237,6 @@ function DocumentDetailsPage() {
       return;
     }
 
-    if (versionFile.size > 10 * 1024 * 1024) {
-      setVersionUploadError("The file must be 10 MiB or smaller.");
-      return;
-    }
-
     setUploadingVersion(true);
     setUploadProgress(0);
 
@@ -384,7 +379,7 @@ function DocumentDetailsPage() {
             <div className="document-upload__heading">
               <h2>Upload a new version</h2>
               <p id="document-version-upload-help">
-                Choose a file with the same extension, up to 10 MiB.
+                Choose a file with the same extension. The server enforces the configured size and content checks.
               </p>
             </div>
 

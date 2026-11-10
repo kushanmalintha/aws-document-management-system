@@ -55,6 +55,19 @@ class SettingsValidationTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             self._settings(max_upload_size_bytes=0)
 
+    def test_rejects_invalid_upload_filename_length(self):
+        with self.assertRaises(ValidationError):
+            self._settings(max_upload_filename_length=256)
+
+    def test_rejects_invalid_document_extensions(self):
+        for extensions in ((), ("pdf",), (".pdf", ".PDF")):
+            with self.subTest(extensions=extensions), self.assertRaises(ValidationError):
+                self._settings(allowed_document_extensions=extensions)
+
+    def test_normalizes_document_extensions(self):
+        settings = self._settings(allowed_document_extensions=(".PDF", ".txt"))
+        self.assertEqual(settings.allowed_document_extensions, (".pdf", ".txt"))
+
     def test_rejects_wildcard_cors_origin(self):
         with self.assertRaises(ValidationError):
             self._settings(cors_allowed_origins=["*"])
