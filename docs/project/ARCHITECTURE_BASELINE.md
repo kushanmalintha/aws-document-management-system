@@ -463,6 +463,20 @@ The `s3_key` name represents the target **AWS** storage model. The local impleme
 - Database constraints should prevent invalid ownership relationships.
 - Deletion must account for the possibility that stored files remain after metadata deletion.
 
+### Phase 2 implementation note — database integrity
+
+The Phase 2 implementation adds database-level enforcement for ownership and key data invariants while preserving the modular-monolith and PostgreSQL architecture:
+
+- Composite foreign-key constraints tie folders, documents, activities, and document shares to the appropriate owning user/document relationships.
+- Check constraints enforce non-negative user token versions, positive document and version sizes, valid current-version values, positive version numbers, and supported document status values.
+- Relevant server defaults and nullable field declarations are aligned with the model behavior.
+- Alembic migration preflight checks detect invalid existing records before applying the new constraints; the migration is intended to fail safely rather than silently repair or delete application data.
+- Deleting a folder preserves its documents and clears the document's folder reference, without changing document ownership.
+
+Implementation commit: `66b0c94a93cfa82a6b5b90eb3e6be88b3b1b9a1c`; merged into `main` by `ea26ff9281f9554a445542f81f883557f544d725`. The project owner reports 24/24 local checks passing; detailed raw output was not supplied in this documentation record.
+
+These database constraints strengthen the existing relational baseline. They do not change the application into microservices, introduce AWS storage, or replace local filesystem storage.
+
 ## 12. Document Upload Flow
 
 The **AWS** target upload flow is:

@@ -320,3 +320,51 @@ Use a per-user token-version value to invalidate previously issued access tokens
 - `backend/app/api/auth.py`
 - `backend/app/db/migrations/versions/5f7c2a91d4e8_add_user_token_version.py`
 - Phase 1 — Backend Configuration and Security Foundation
+
+
+---
+
+## Decision 010 — Enforce Ownership and Core Data Invariants in PostgreSQL
+
+**Status:** Agreed and implemented in Phase 2  
+**Date:** 2026-11-10  
+**Category:** Database integrity and data ownership
+
+### Context
+
+Application-level ownership checks are important, but the relational database should also prevent invalid ownership relationships and invalid core values from being persisted, including when data is written through a path that does not execute the usual application workflow.
+
+### Decision
+
+Use PostgreSQL constraints to enforce the ownership relationships and core data invariants supported by the existing data model.
+
+- Add composite foreign-key constraints so folder, document, activity, and document-share relationships cannot cross the relevant user/document ownership boundary.
+- Add check constraints for non-negative user token versions, positive document and version sizes, valid current-version values, positive version numbers, and supported document status values.
+- Align applicable server defaults and nullable model declarations with the database behavior.
+- Use a migration preflight to detect incompatible existing records before applying constraints. Do not silently delete or repair user data as part of the migration.
+- Preserve folder deletion behavior: documents remain owned by their user and have their folder reference cleared when the folder is deleted.
+
+### Rationale
+
+- Makes important ownership invariants enforceable at the database boundary.
+- Reduces the chance of invalid relationships being persisted by an overlooked application code path.
+- Keeps data integrity in PostgreSQL, consistent with the existing architecture.
+- Makes migration failure safer and more diagnosable when existing data violates the new rules.
+
+### Consequences
+
+- The database schema contains additional composite foreign keys and check constraints.
+- Existing data must satisfy the preflight checks before the migration can complete.
+- Application code and ORM relationship mappings must remain consistent with the composite constraints.
+- The change does not introduce cross-service databases, microservices, AWS resources, or AWS storage integration.
+- The project owner reports 24/24 local checks passing; the result is not independently reproduced in this record.
+
+### Related files or tasks
+
+- `backend/app/db/database.py`
+- `backend/app/db/migrations/env.py`
+- `backend/app/db/migrations/versions/7b2c1f8e4a91_enforce_database_integrity.py`
+- `backend/app/models/`
+- `backend/tests/test_database_config.py`
+- `backend/tests/test_database_integrity.py`
+- Phase 2 — Database Design and Data Integrity
