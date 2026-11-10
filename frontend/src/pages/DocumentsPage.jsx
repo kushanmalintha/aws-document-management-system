@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { getApiErrorMessage } from "../services/api";
+import { ALLOWED_DOCUMENT_EXTENSIONS } from "../config/documentUpload";
 import {
   deleteDocument,
   downloadDocument,
@@ -10,21 +11,6 @@ import {
 } from "../services/documentService";
 
 import "../styles/documents.css";
-
-const ALLOWED_EXTENSIONS = [
-  ".pdf",
-  ".txt",
-  ".doc",
-  ".docx",
-  ".xls",
-  ".xlsx",
-  ".ppt",
-  ".pptx",
-  ".csv",
-  ".png",
-  ".jpg",
-  ".jpeg",
-];
 
 function formatFileSize(bytes) {
   if (bytes === null || bytes === undefined || bytes === "") {
@@ -204,18 +190,13 @@ function DocumentsPage({ folderId, folderName, unfiledOnly = false } = {}) {
         ? selectedFile.name.slice(lastDotIndex).toLowerCase()
         : "";
 
-    if (!ALLOWED_EXTENSIONS.includes(extension)) {
+    if (!ALLOWED_DOCUMENT_EXTENSIONS.includes(extension)) {
       setUploadError("This file type is not supported.");
       return;
     }
 
     if (selectedFile.size === 0) {
       setUploadError("Empty files cannot be uploaded.");
-      return;
-    }
-
-    if (selectedFile.size > 10 * 1024 * 1024) {
-      setUploadError("The file must be 10 MiB or smaller.");
       return;
     }
 
@@ -378,7 +359,7 @@ function DocumentsPage({ folderId, folderName, unfiledOnly = false } = {}) {
                 ? "Upload without a folder"
                 : "Upload a document"}
           </h2>
-          <p id="document-upload-help">Choose a supported file up to 10 MiB.</p>
+          <p id="document-upload-help">Choose a supported file. The server enforces the configured size and content checks.</p>
         </div>
 
         <div className="document-upload__controls">
@@ -389,7 +370,7 @@ function DocumentsPage({ folderId, folderName, unfiledOnly = false } = {}) {
             ref={fileInputRef}
             id="document-file"
             type="file"
-            accept={ALLOWED_EXTENSIONS.join(",")}
+            accept={ALLOWED_DOCUMENT_EXTENSIONS.join(",")}
             aria-describedby="document-upload-help"
             disabled={isUploading}
             onChange={(event) => {

@@ -1,6 +1,4 @@
-import hashlib
 import logging
-import mimetypes
 from datetime import datetime, timezone
 from pathlib import PurePosixPath
 from urllib.parse import quote
@@ -20,6 +18,7 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from starlette.background import BackgroundTask
+from starlette.concurrency import run_in_threadpool
 
 from app.core.config import settings
 from app.core.dependencies import get_current_user
@@ -31,6 +30,12 @@ from app.models.user import User
 from app.schemas.document import DocumentResponse, DocumentVersionResponse
 from app.services.activity_service import record_activity
 from app.services.storage import storage_service
+from app.services.upload_validation import (
+    UPLOAD_CHUNK_SIZE,
+    UploadValidationError,
+    inspect_upload,
+    normalize_upload_filename,
+)
 
 router = APIRouter(
     prefix="/documents",
@@ -39,22 +44,6 @@ router = APIRouter(
 
 logger = logging.getLogger(__name__)
 
-ALLOWED_DOCUMENT_EXTENSIONS = {
-    ".pdf",
-    ".txt",
-    ".doc",
-    ".docx",
-    ".xls",
-    ".xlsx",
-    ".ppt",
-    ".pptx",
-    ".csv",
-    ".png",
-    ".jpg",
-    ".jpeg",
-}
-
-UPLOAD_CHUNK_SIZE = 1024 * 1024
 
 @router.post(
     "/upload",
@@ -67,87 +56,44 @@ async def upload_document(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # A filename is user-supplied input, so do not use it as
-    # a storage path.
-    original_filename = (file.filename or "").replace("\\", "/")
-    filename = original_filename.rsplit("/", 1)[-1].strip()
-
-    if not filename or filename in {".", ".."}:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A valid filename is required",
+    try:
+        filename, extension = normalize_upload_filename(
+            file.filename,
+            settings.allowed_document_extensions,
+            settings.max_upload_filename_length,
         )
-
-    if len(filename) > 255:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Filename cannot exceed 255 characters",
-        )
-
-    extension = filename.rsplit(".", 1)[-1].lower()
-    if "." not in filename:
-        extension = ""
-    else:
-        extension = f".{extension}"
-
-    if extension not in ALLOWED_DOCUMENT_EXTENSIONS:
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="This file extension is not allowed",
-        )
+    except UploadValidationError as exc:
+        await file.close()
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
     # Check folder ownership before writing anything.
     if folder_id is not None:
         folder = db.get(Folder, folder_id)
 
         if folder is None:
+            await file.close()
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Folder not found",
             )
 
         if folder.user_id != current_user.id:
+            await file.close()
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have access to this folder",
             )
 
-    # Count actual bytes rather than trusting the client's
-    # Content-Length or MIME type.
-    size_bytes = 0
-
-    while True:
-        chunk = await file.read(UPLOAD_CHUNK_SIZE)
-
-        if not chunk:
-            break
-
-        size_bytes += len(chunk)
-
-        if size_bytes > settings.max_upload_size_bytes:
-            await file.close()
-
-            raise HTTPException(
-                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
-                detail="File exceeds the maximum upload size",
-            )
-
-    if size_bytes == 0:
-        await file.close()
-
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Empty files are not allowed",
+    try:
+        inspection = await run_in_threadpool(
+            inspect_upload, file.file, filename, extension, settings.max_upload_size_bytes
         )
+    except UploadValidationError as exc:
+        await file.close()
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
-    await file.seek(0)
-
-    # Determine a content type based on the allowed filename
-    # extension instead of blindly trusting the client header.
-    content_type = (
-        mimetypes.guess_type(filename)[0]
-        or "application/octet-stream"
-    )
+    size_bytes = inspection.size_bytes
+    content_type = inspection.content_type
 
     document = Document(
         user_id=current_user.id,
@@ -163,7 +109,7 @@ async def upload_document(
     db.add(document)
 
     storage_key: str | None = None
-    storage_attempted = False
+    storage_saved = False
 
     try:
         # Create the pending row within the current transaction.
@@ -175,12 +121,8 @@ async def upload_document(
             f"{document.id}/v1/{uuid4().hex}{extension}"
         )
 
-        storage_attempted = True
-
-        storage_service.save(
-            file.file,
-            storage_key,
-        )
+        storage_service.save(file.file, storage_key)
+        storage_saved = True
 
         document.s3_key = storage_key
         document.status = DocumentStatus.UPLOADED
@@ -191,7 +133,7 @@ async def upload_document(
             version_number=1,
             s3_key=storage_key,
             size_bytes=size_bytes,
-            checksum=None,
+            checksum=inspection.checksum,
         )
 
         db.add(initial_version)
@@ -215,7 +157,7 @@ async def upload_document(
 
         # Compensate for a partial or successful file write if
         # the database transaction did not complete.
-        if storage_attempted and storage_key is not None:
+        if storage_saved and storage_key is not None:
             try:
                 storage_service.delete(storage_key)
             except Exception:
@@ -369,56 +311,34 @@ async def upload_document_version(
             detail="Document has no current stored file",
         )
 
-    # Keep the same file extension because the current model
-    # stores filename and content type on Document, not per version.
-    original_extension = (
-        PurePosixPath(document.name).suffix.lower()
-    )
-    uploaded_filename = (file.filename or "").replace("\\", "/")
-    uploaded_filename = uploaded_filename.rsplit("/", 1)[-1].strip()
-    uploaded_extension = PurePosixPath(uploaded_filename).suffix.lower()
+    try:
+        uploaded_filename, uploaded_extension = normalize_upload_filename(
+            file.filename,
+            settings.allowed_document_extensions,
+            settings.max_upload_filename_length,
+        )
+    except UploadValidationError as exc:
+        await file.close()
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
-    if not uploaded_filename or uploaded_extension != original_extension:
+    original_extension = PurePosixPath(document.name).suffix.lower()
+    if uploaded_extension != original_extension:
+        await file.close()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The new version must use the same file extension",
         )
 
-    if original_extension not in ALLOWED_DOCUMENT_EXTENSIONS:
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="This file extension is not allowed",
+    try:
+        inspection = await run_in_threadpool(
+            inspect_upload, file.file, uploaded_filename, uploaded_extension,
+            settings.max_upload_size_bytes,
         )
-
-    # Count actual bytes and calculate a SHA-256 checksum.
-    size_bytes = 0
-    checksum = hashlib.sha256()
-
-    while True:
-        chunk = await file.read(UPLOAD_CHUNK_SIZE)
-
-        if not chunk:
-            break
-
-        size_bytes += len(chunk)
-
-        if size_bytes > settings.max_upload_size_bytes:
-            await file.close()
-            raise HTTPException(
-                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
-                detail="File exceeds the maximum upload size",
-            )
-
-        checksum.update(chunk)
-
-    if size_bytes == 0:
+    except UploadValidationError as exc:
         await file.close()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Empty files are not allowed",
-        )
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
-    await file.seek(0)
+    size_bytes = inspection.size_bytes
 
     new_version_number = document.current_version + 1
     storage_key = (
@@ -427,12 +347,12 @@ async def upload_document_version(
         f"{uuid4().hex}{original_extension}"
     )
 
-    storage_attempted = False
+    storage_saved = False
 
     try:
         # Store the new file at a unique path first.
-        storage_attempted = True
         storage_service.save(file.file, storage_key)
+        storage_saved = True
 
         # Record the new version in the same DB transaction
         # that updates the current document metadata.
@@ -441,7 +361,7 @@ async def upload_document_version(
             version_number=new_version_number,
             s3_key=storage_key,
             size_bytes=size_bytes,
-            checksum=checksum.hexdigest(),
+            checksum=inspection.checksum,
         )
 
         db.add(new_version)
@@ -470,7 +390,7 @@ async def upload_document_version(
         db.rollback()
 
         # Remove the new file if the database update fails.
-        if storage_attempted:
+        if storage_saved:
             try:
                 storage_service.delete(storage_key)
             except Exception:
@@ -555,7 +475,7 @@ def download_document(
 
     try:
         stored_file = storage_service.read(document.s3_key)
-    except FileNotFoundError as exc:
+    except (FileNotFoundError, ValueError) as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Stored document not found",
@@ -640,7 +560,7 @@ def download_document_version(
 
     try:
         stored_file = storage_service.read(version.s3_key)
-    except FileNotFoundError as exc:
+    except (FileNotFoundError, ValueError) as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Stored document version not found",
