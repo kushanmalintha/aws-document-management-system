@@ -370,7 +370,7 @@ function DocumentsPage({ folderId, folderName, unfiledOnly = false } = {}) {
             ref={fileInputRef}
             id="document-file"
             type="file"
-            accept={ALLOWED_EXTENSIONS.join(",")}
+            accept={ALLOWED_DOCUMENT_EXTENSIONS.join(",")}
             aria-describedby="document-upload-help"
             disabled={isUploading}
             onChange={(event) => {
