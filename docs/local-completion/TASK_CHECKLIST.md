@@ -258,7 +258,7 @@ A phase should be marked complete only after all mandatory tasks and its accepta
 
 **Implementation status:** Implemented and merged into `main` in commit `d6e8f4728953e4f61d680eb8c6b643a72275e9c0`.
 
-**Verification status:** Manual functional testing by the project owner is pending. Implementation and automated test additions must not be treated as proof that all manual acceptance scenarios have passed.
+**Verification status:** Phase-level manual testing and automated backend tests were reported as passed by the project owner on 2026-11-11, with no issues found. Phase 3 is accepted. Detailed test output and case-by-case results were not supplied; PostgreSQL-backed integration coverage was not separately identified. The individual scenario checkboxes below are retained as an evidence-detail tracker and are not marked individually verified without itemized results.
 
 ## 3.1 Storage Architecture
 
@@ -331,10 +331,10 @@ Permanent deletion, physical-file cleanup, and automated orphan cleanup are not 
 - [I] Local storage tests cover binary save/read, non-overwrite behavior, missing-file handling, traversal/absolute-path rejection, symlink rejection where supported, and partial-write cleanup.
 - [I] Upload-validation tests cover filename normalization, disallowed extensions, empty/oversized files, basic content mismatch, checksums, and selected supported formats.
 - [I] Storage lifecycle tests cover soft-delete retention, deleted download rejection, cross-user download rejection, invalid stored keys, and download response headers.
-- [ ] Execute the backend unit test suite locally and record the exact result.
-- [ ] Execute the relevant PostgreSQL-backed integration tests against a dedicated disposable test database.
-- [ ] Manually exercise storage-unavailable, missing-file, and database-failure scenarios where safely reproducible.
-- [ ] Record failed tests, skipped tests, and platform-dependent symlink-test behavior.
+- [V] Project owner reported that the Phase 3 automated backend tests passed (aggregate result; exact command, test count, and raw output not supplied).
+- [ ] Confirm whether the reported backend test run included the relevant PostgreSQL-backed integration tests; this coverage was not separately identified in the supplied result.
+- [ ] Manually exercise storage-unavailable, missing-file, and database-failure scenarios where safely reproducible, if these were not included in the owner's aggregate manual verification.
+- [ ] Record failed tests, skipped tests, and platform-dependent symlink-test behavior if detailed test output becomes available.
 
 ### Phase 3 Implementation Record
 
@@ -343,19 +343,33 @@ Permanent deletion, physical-file cleanup, and automated orphan cleanup are not 
 - Implementation includes backend storage hardening and upload validation, backend tests, shared frontend upload-extension configuration, and upload UI updates.
 - No database migration, permanent deletion mechanism, antivirus scanning, or AWS integration was introduced.
 
+### Phase 3 Verification Record and Acceptance
+
+**Date:** 2026-11-11  
+**Acceptance status:** [V] Accepted / Complete (project-owner-reported verification)
+
+The project owner reported:
+
+- Manual testing: Passed.
+- Automated backend tests: Passed.
+- Issues: No issues found.
+- Additional details: None provided.
+
+The assistant did not independently execute these tests during this documentation update. The result is recorded at phase level only. Individual scenario checkboxes above remain unmarked where case-by-case evidence was not supplied. PostgreSQL-backed integration coverage was not separately identified and is not claimed as verified.
+
 ### Phase 3 Acceptance Criteria
 
-Implementation is recorded as merged, but Phase 3 must not be marked fully accepted until the pending local manual checks and required automated test execution have been completed and their results recorded.
+The implementation is merged and the project owner has reported successful phase-level manual testing and automated backend tests with no issues. Phase 3 is accepted on that aggregate report; this does not imply that unreported individual scenarios or separately identified PostgreSQL-backed integration tests were independently verified.
 
 - [I] Local storage boundary and path-safety implementation.
 - [I] Server-side upload validation and checksum calculation.
 - [I] Secure document/version download behavior and soft-delete retention implementation.
 - [I] Phase 3-focused automated test cases added.
-- [ ] Backend automated tests executed successfully and evidence recorded.
-- [ ] Required PostgreSQL integration tests executed successfully and evidence recorded.
-- [ ] Manual upload, download, version, ownership, and soft-delete scenarios passed.
-- [ ] Storage security and failure-handling scenarios reviewed.
-- [ ] Phase 3 acceptance decision recorded after evidence review.
+- [V] Project owner reported that Phase 3 automated backend tests passed (aggregate result; detailed output not supplied).
+- [ ] PostgreSQL-backed integration test execution/coverage separately confirmed; not identified in the supplied report.
+- [V] Project owner reported Phase 3 manual testing passed at the aggregate phase level (individual case results not supplied).
+- [ ] Detailed case-by-case storage security and failure-handling outcomes recorded.
+- [V] Phase 3 acceptance decision recorded on 2026-11-11.
 
 ---
 
