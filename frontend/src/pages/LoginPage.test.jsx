@@ -32,6 +32,22 @@ describe("LoginPage", () => {
     expect(login).not.toHaveBeenCalled();
   });
 
+  it("rejects an invalid email address before attempting authentication", () => {
+    const login = vi.fn();
+    renderLogin(login);
+
+    fireEvent.change(screen.getByLabelText("Email address"), {
+      target: { value: "not-an-email" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "some-password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Enter a valid email address.");
+    expect(login).not.toHaveBeenCalled();
+  });
+
   it("trims the email and returns to the originally requested route", async () => {
     const login = vi.fn().mockResolvedValue(undefined);
     renderLogin(login, {

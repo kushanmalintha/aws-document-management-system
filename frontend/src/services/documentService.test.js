@@ -5,12 +5,16 @@ vi.mock("./api", () => ({
     get: vi.fn(),
     post: vi.fn(),
     delete: vi.fn(),
+    patch: vi.fn(),
   },
 }));
 
 import api from "./api";
 import {
   deleteDocument,
+  deleteDocumentVersion,
+  moveDocument,
+  renameDocument,
   downloadDocument,
   downloadDocumentVersion,
   getDocument,
@@ -169,6 +173,37 @@ describe("documentService", () => {
     expect(error.response.data).toEqual({
       detail: "Document version not found",
     });
+  });
+
+  it("renames and moves a document through the document endpoints", async () => {
+    api.patch
+      .mockResolvedValueOnce({ data: { id: "doc-1", name: "renamed.pdf" } })
+      .mockResolvedValueOnce({ data: { id: "doc-1", folder_id: "folder-1" } });
+
+    await expect(renameDocument("doc-1", "renamed.pdf")).resolves.toEqual({
+      id: "doc-1",
+      name: "renamed.pdf",
+    });
+    await expect(moveDocument("doc-1", "folder-1")).resolves.toEqual({
+      id: "doc-1",
+      folder_id: "folder-1",
+    });
+    expect(api.patch).toHaveBeenNthCalledWith(
+      1,
+      "/api/documents/doc-1",
+      { name: "renamed.pdf" },
+    );
+    expect(api.patch).toHaveBeenNthCalledWith(
+      2,
+      "/api/documents/doc-1/move",
+      { folder_id: "folder-1" },
+    );
+  });
+
+  it("deletes only the selected historical version through its endpoint", async () => {
+    api.delete.mockResolvedValue({ status: 204 });
+    await expect(deleteDocumentVersion("doc-1", 1)).resolves.toBeUndefined();
+    expect(api.delete).toHaveBeenCalledWith("/api/documents/doc-1/versions/1");
   });
 
   it("deletes a document through the soft-delete endpoint", async () => {

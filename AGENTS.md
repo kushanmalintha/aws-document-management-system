@@ -283,8 +283,8 @@ Do not assume that a previous conversation's proposed changes were implemented, 
 
 The current priority is:
 
-**Phases 0–3 are complete and Phase 4 — Backend Functional Completion is the current priority.**
+**Phase 4 implementation is merged into main but still awaits runtime verification. Phase 5 — Frontend Functional Completion and Security is the active implementation phase.**
 
-Continue local-first development. Do not introduce AWS resources or integration during Phase 4. Inspect the current repository state and Phase 4 checklist before continuing. The Phase 4 implementation is on `feature/phase-4-document-management`; 4A–4F implementation and test-coverage changes are committed, while runtime verification remains pending. The current branch head is `08131a0e1ce2e31202decf19ff1ab3ba6eb61671` (not pushed or merged).
+Continue local-first development. Do not introduce AWS resources or integration during Phase 5. Inspect the current repository state and Phase 5 checklist before continuing. Phase 4A–4F implementation and backend test coverage were merged into `main` by PR #8 (merge commit `368864d4cf90d0dbc985ed07cbfb212356c21c75`). The backend test suite has not yet been run for Phase 4, so Phase 4 runtime verification remains pending. Phase 5 work is being prepared on `feature/phase-5-frontend-functional-completion`; do not treat it as committed or verified until the branch history and test evidence confirm that status.
 
 The project owner must approve repository changes, commits, pushes, merges, and any AWS transition separately.

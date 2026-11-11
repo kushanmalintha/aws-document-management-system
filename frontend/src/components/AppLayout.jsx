@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import "../styles/app-layout.css";
@@ -14,14 +15,18 @@ const navigationItems = [
 export default function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   async function handleLogout() {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
     try {
       await logout();
     } catch {
       // AuthContext clears the local session even when the API request fails.
+    } finally {
+      navigate("/login", { replace: true });
     }
-    navigate("/login", { replace: true });
   }
 
   const displayName = user?.display_name || user?.email || "User";
@@ -50,8 +55,9 @@ export default function AppLayout() {
             type="button"
             className="app-logout-button"
             onClick={handleLogout}
+            disabled={isLoggingOut}
           >
-            Log out
+            {isLoggingOut ? "Logging out…" : "Log out"}
           </button>
         </div>
       </header>

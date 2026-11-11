@@ -174,7 +174,8 @@ This keeps the database and uploaded documents in their named volumes for the ne
 - Document search
 - Document filtering
 - Authenticated document downloads with ownership checks
-- Document version uploads and retained version history
+- Document rename and movement between folders or the root
+- Document version uploads, retained version history, and deletion of non-current historical versions
 - Soft deletion that retains document metadata, versions, and physical files
 - Activity tracking
 - Document processing status

@@ -44,6 +44,11 @@ function LoginPage() {
       return;
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+
     if (!form.password) {
       setError("Please enter your password.");
       return;

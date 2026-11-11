@@ -61,6 +61,19 @@ describe("RegisterPage", () => {
     expect(registerUser).not.toHaveBeenCalled();
   });
 
+  it("rejects an invalid email address before creating an account", () => {
+    renderRegister();
+    fillRegistrationForm();
+    fireEvent.change(screen.getByLabelText("Email address"), {
+      target: { value: "not-an-email" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Enter a valid email address.");
+    expect(registerUser).not.toHaveBeenCalled();
+  });
+
   it("trims profile fields and navigates to login after registration", async () => {
     renderRegister();
     fillRegistrationForm();

@@ -550,6 +550,21 @@ The implementation is merged and the project owner has reported successful phase
 
 ---
 
+### Phase 5 Implementation Notes — 2026-11-11
+
+The initial frontend audit found that the majority of the core screens and workflows already existed. The following implementation additions have been prepared:
+
+- Document rename and move controls on the document details page.
+- Historical-version deletion controls; the current version is not offered for deletion.
+- Shared client-side upload-size feedback aligned with the backend's default 10 MiB limit. The backend remains authoritative.
+- Protected-request 401 handling that clears the local access token and in-memory authentication state; login/registration credential failures are excluded.
+- Email-format feedback for login and registration.
+- A pending state for logout to prevent repeated submissions.
+- JSON error extraction for Blob-based document downloads.
+- Focused frontend tests for the new document controls, service methods, version deletion, and expired-session handling.
+
+These are implementation notes, not test acceptance. Keep the verification checkboxes below unchecked until the corresponding frontend tests, lint, production build, and integrated workflows have actually been executed. Test execution is deferred to the agreed testing phase.
+
 # Phase 6 — API Contract, Error Handling, and Observability
 
 **Objective:** Ensure **API** consistency, predictable error responses, and sufficient diagnostic information.
