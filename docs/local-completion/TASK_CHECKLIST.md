@@ -643,22 +643,22 @@ Do not mark Phase 6 acceptance criteria verified until the dedicated test phase 
 
 ## 7.1 Backend Tests
 
-- [ ] Review existing backend test configuration.
+- [R] Review existing backend test configuration.
 - [ ] Run existing backend tests.
-- [ ] Add or improve authentication tests where needed.
-- [ ] Add authorization tests.
-- [ ] Add user isolation tests.
-- [ ] Add folder workflow tests.
-- [ ] Add document workflow tests.
-- [ ] Add versioning tests.
+- [I] Add PostgreSQL-backed registration, login, and profile integration coverage.
+- [I] Add PostgreSQL-backed authenticated access and unauthorized request coverage.
+- [I] Add PostgreSQL-backed folder and document user-isolation coverage.
+- [I] Add PostgreSQL-backed folder create/list/isolation coverage.
+- [I] Add PostgreSQL-backed upload, listing, download, and soft-delete coverage.
+- [I] Add PostgreSQL-backed version upload/list/download coverage.
 - [ ] Add storage security tests.
-- [ ] Add activity tests.
-- [ ] Add database integrity tests.
-- [ ] Record results.
+- [I] Add PostgreSQL-backed activity recording assertions.
+- [R] Reuse existing PostgreSQL database-integrity tests; execution remains pending.
+- [ ] Record results after local execution; no tests have been run as part of this implementation.
 
 ## 7.2 Frontend Tests
 
-- [ ] Review existing frontend test configuration.
+- [R] Review existing frontend test configuration.
 - [ ] Run existing frontend tests.
 - [ ] Verify authentication context tests.
 - [ ] Verify protected route tests.
@@ -704,6 +704,20 @@ Do not mark Phase 6 acceptance criteria verified until the dedicated test phase 
 
 ---
 
+### Phase 7 Implementation Notes — 2026-11-11
+
+**Status:** Test corrections and PostgreSQL-backed API integration coverage prepared on `feature/phase-7-testing`; execution and verification pending.
+
+Implemented:
+- Fixed the missing `unittest.mock.call` import in `backend/tests/test_api_workflows.py`.
+- Added `backend/tests/test_api_integration.py`, using a real PostgreSQL test database through FastAPI's dependency override and the actual local filesystem storage implementation.
+- Integration coverage includes registration/login/profile, duplicate registration, folder ownership isolation, document upload/download, version upload/list/download, activity persistence, soft deletion and retained binaries, cross-user document access, and unauthenticated access.
+- Added `docs/testing/PHASE_7_TESTING.md` with exact commands and explicit warnings about destructive PostgreSQL test setup.
+- Existing PostgreSQL integrity tests remain in place and are included in the dedicated test command.
+
+**Not verified:** No backend or frontend tests, PostgreSQL connection, frontend lint, production build, browser workflow, or runtime check has been executed in this repository session. All execution checkboxes above remain pending unless explicitly marked as reviewed or implemented.
+
+---
 # Phase 8 — Docker and Local Operational Reliability
 
 **Objective:** Ensure a clean local environment can be built, started, persisted, and recovered using Docker Compose.

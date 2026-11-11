@@ -95,7 +95,10 @@ def _create_test_engine():
     configured = DATABASE_URL
     target_identity = (test_url.host, test_url.port, test_url.database)
     application_identity = (configured.host, configured.port, configured.database)
-    if target_identity == application_identity:
+    if (
+        test_url.database.lower() == (configured.database or "").lower()
+        or target_identity == application_identity
+    ):
         raise RuntimeError("TEST_DATABASE_URL must not point to the application database")
 
     if test_url.drivername not in {"postgresql", "postgresql+psycopg"}:

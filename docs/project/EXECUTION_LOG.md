@@ -845,3 +845,63 @@ Complete the approved Phase 6 implementation while retaining the local-first mod
 - No AWS resources or dependencies were introduced.
 - Commit created after explicit approval; no push or merge was performed.
 
+
+
+---
+
+## Entry 012 — Phase 7 Testing Preparation and PostgreSQL API Integration Coverage
+
+**Date:** 2026-11-11  
+**Phase:** 7 — Backend, Frontend, and Integration Testing  
+**Branch:** `feature/phase-7-testing`  
+**Base commit:** `15817e54262df045231dce84cacd5b8ccbb14386` (Phase 6 documentation follow-up)  
+**Status:** Test corrections and integration coverage implemented in the working branch; execution and verification pending  
+**Activity type:** Approved testing-phase implementation and static review
+
+### Objective
+
+Prepare the approved Phase 7 test corrections and real PostgreSQL-backed API integration coverage while keeping the database test target isolated from the normal application database.
+
+### Implemented changes
+
+- Fixed the missing `unittest.mock.call` import in `backend/tests/test_api_workflows.py`, used by the activity-recording helper in the mocked API workflow tests.
+- Added `backend/tests/test_api_integration.py`, which uses a real PostgreSQL database through a FastAPI database dependency override and the actual local filesystem storage implementation.
+- Added integration scenarios for registration/login/profile, duplicate registration, folder creation/listing and cross-user isolation, document upload/download, version upload/list/download, activity persistence, soft deletion and retained binary files, cross-user document access, and unauthenticated access.
+- Added `docs/testing/PHASE_7_TESTING.md` with backend/frontend commands, PostgreSQL test database setup, and a prominent warning that PostgreSQL test setup drops and recreates tables in the configured test database.
+- Updated the Phase 7 checklist, project status, and working instructions to reflect the current branch and accurately distinguish prepared test coverage from executed verification.
+
+### Files changed or added
+
+- `backend/tests/test_api_workflows.py`
+- `backend/tests/test_api_integration.py` (new)
+- `docs/testing/PHASE_7_TESTING.md` (new)
+- `docs/local-completion/TASK_CHECKLIST.md`
+- `docs/project/PROJECT_STATUS.md`
+- `docs/project/EXECUTION_LOG.md`
+- `AGENTS.md`
+
+### Static review and safety
+
+- The integration test module requires `TEST_DATABASE_URL`.
+- The configured target must use PostgreSQL and a database name containing `test`.
+- The target host, port, and database must differ from the application's configured database identity.
+- The test guide explicitly warns that the integration and integrity test setup drops and recreates tables in the test database.
+- Integration tests use a temporary local filesystem storage directory and patch document-processing scheduling so tests do not run background processing outside the test's database session.
+- No AWS resources, dependencies, application runtime code, or database migrations were changed.
+
+### Verification and limitations
+
+- No backend test command has been executed.
+- No PostgreSQL connection or destructive test-database operation has been performed.
+- No frontend test, ESLint command, production build, browser workflow, or runtime endpoint check has been executed.
+- The new integration test code has been statically reviewed only; actual compatibility with the local PostgreSQL instance and installed dependency environment remains to be established by execution.
+- Phase 4 runtime verification and Phase 5/6 runtime verification remain outstanding.
+- Phase 7 must not be marked Verified until the project owner supplies actual command output and results.
+
+### Approval and commit information
+
+- Phase 7 implementation scope was explicitly approved by the project owner.
+- No commit has been created.
+- No push or merge has been performed.
+- A separate commit approval will be requested after test execution/review and the final changed-file inspection.
+
