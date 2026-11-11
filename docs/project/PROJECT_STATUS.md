@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-11-11  
 **Repository:** [https://github.com/kushanmalintha/aws-document-management-system](https://github.com/kushanmalintha/aws-document-management-system)  
-**Primary branch inspected:** `main`  
+**Current development branch:** `feature/phase-4-document-management` (local feature work; not pushed)  
 **Current development stage:** Local completion — Phase 4 backend functional completion  
 **AWS implementation:** Deferred
 
@@ -50,7 +50,7 @@ The current priority is local completion. No **AWS** resources should be created
 
 ## 3. Current Phase and Task
 
-**Current phase:** Phase 4 — Backend Functional Completion (ready to begin; not started)
+**Current phase:** Phase 4 — Backend Functional Completion (4A–4C implemented; 4D–4F implementation and static review in progress; runtime verification pending)
 
 **Latest completed phase:** Phase 3 — File Storage and Upload Security
 
@@ -66,7 +66,9 @@ The Phase 1 merge is represented by merge commit 25d9ccb3a8492a5ae477b6b83a6fa5e
 
 **Remaining deferrals:** Frontend-to-backend application/API workflow verification remains assigned to Phase 5/6; detailed startup-log review remains assigned to Phase 6. Broader backend, frontend, integration, reliability, and final acceptance testing remain in their later phases. Phase 3 was accepted on the project owner's aggregate manual and automated backend test report; detailed case-by-case results and explicit PostgreSQL-backed integration coverage were not supplied.
 
-**Next action:** Begin Phase 4 — Backend Functional Completion with repository inspection and implementation review. Do not assume planned functionality is missing; inspect existing code before proposing changes. Continue to defer AWS resources and integration during local completion.
+**Phase 4 implementation position:** 4A document rename/move, 4B old-version deletion, and 4C lightweight local processing are committed on the feature branch. 4D activity-history completion, 4E API workflow test coverage, and 4F static final review have been implemented/reviewed in the current working changes. The automated backend suite has not been executed in this environment; Phase 4 remains awaiting runtime verification. No push or merge has occurred.
+
+**Next action:** Run the backend test suite from `backend/` using `python -m unittest discover -s tests -v`, resolve any failures, and report the actual result before marking Phase 4 verified. Continue to defer AWS resources and integration during local completion.
 
 Any proposed repository changes must be presented for approval before implementation.
 
@@ -78,7 +80,7 @@ Any proposed repository changes must be presented for approval before implementa
 | 1 | Backend configuration and security foundation | Complete (merged; owner-reported verification completed) |
 | 2 | Database design and data integrity | Complete (merged; 24/24 checks project-owner-reported) |
 | 3 | File storage and upload security | Complete and accepted (project-owner-reported manual and automated backend tests passed) |
-| 4 | Backend functional completion | Not Started |
+| 4 | Backend functional completion | In Progress — implementation awaiting runtime verification |
 | 5 | Frontend functional completion and security | Not Started |
 | 6 | API contract, error handling, and observability | Not Started |
 | 7 | Backend, frontend, and integration testing | Not Started |

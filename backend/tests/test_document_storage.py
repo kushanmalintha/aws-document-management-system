@@ -347,6 +347,24 @@ class DocumentVersionDeletionTests(unittest.TestCase):
         self.assertEqual(self.document.current_version, 3)
         storage_mock.delete.assert_called_once_with(self.version.s3_key)
 
+    @patch("app.api.documents.record_activity")
+    @patch("app.api.documents.storage_service")
+    def test_deleting_old_version_records_activity(
+        self, storage_mock, activity_mock
+    ):
+        storage_mock.read.return_value = self._stored_file
+
+        document_api.delete_document_version(
+            self.document_id, 2, self.user, self.db
+        )
+
+        activity_mock.assert_called_once()
+        self.assertEqual(activity_mock.call_args.kwargs["action"], "DOCUMENT_VERSION_DELETED")
+        self.assertEqual(activity_mock.call_args.kwargs["document_id"], self.document_id)
+        self.assertEqual(
+            activity_mock.call_args.kwargs["metadata_json"]["version_number"], 2
+        )
+
     @patch("app.api.documents.storage_service")
     def test_rejects_current_version_deletion(self, storage_mock):
         self.version.version_number = 3

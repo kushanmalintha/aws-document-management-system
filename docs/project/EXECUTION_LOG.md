@@ -630,3 +630,62 @@ Phase 3 is **Complete / Accepted** based on the aggregate verification report su
 Proceed to **Phase 4 — Backend Functional Completion**. Begin with repository inspection and review of the existing backend implementation against the Phase 4 checklist. Do not assume listed functionality is absent; establish the current implementation state before proposing changes.
 
 No application code was changed in this acceptance step.
+
+
+---
+
+## Entry 008 — Phase 4D–4F Activity History, API Workflow Coverage, and Static Final Review
+
+**Date:** 2026-11-11  
+**Phase:** 4 — Backend Functional Completion  
+**Status:** Implemented / Awaiting Runtime Verification  
+**Activity type:** Backend implementation, test coverage, and static review
+
+### Scope
+
+Complete the approved Phase 4D, 4E, and 4F work on `feature/phase-4-document-management`, preserving the modular-monolith architecture and local-only implementation.
+
+### 4D — Activity history
+
+- Reviewed the existing activity model, schema, service, API route, and activity calls across folder, document, version, and processing workflows.
+- Confirmed that the authenticated activity endpoint already scopes records to the current user and supports optional document filtering and bounded limit/offset pagination.
+- Added activity recording for successful deletion of a non-current document version (`DOCUMENT_VERSION_DELETED`), including document name and version number metadata.
+- Added test coverage for the version-deletion activity event.
+
+### 4E — API workflow test coverage
+
+- Added `backend/tests/test_api_workflows.py` with endpoint-level tests for authenticated activity listing, document filtering, pagination bounds, unauthenticated access, document rename/move, ownership enforcement, and folder create/rename/delete activity generation.
+- Added the pinned `httpx` test-client dependency to `backend/requirements.txt` for FastAPI's `TestClient`.
+- Existing document storage and processing tests continue to cover version operations, upload/download behavior, processing success/failure, stale tasks, and ownership-related cases.
+
+### 4F — Static final review
+
+- Reviewed route registration, activity ownership constraints, document/folder ownership checks, version deletion transaction compensation, processing status transitions, and the process-local background-task limitation.
+- Corrected the Phase 4 checklist version-review formatting typo.
+- Updated project status and repository continuation instructions to identify Phase 4 as current.
+- No AWS services, AWS resources, infrastructure, migrations, or architecture changes were introduced.
+
+### Verification and limitations
+
+- Static repository review was performed against the feature branch.
+- Automated tests were **not executed** in this environment; the GitHub repository connector can inspect and modify repository files but does not provide a Python runtime for executing the backend suite.
+- The added API tests and existing backend tests therefore remain **awaiting runtime verification**. No test pass is claimed.
+- PostgreSQL-backed integration tests require a dedicated disposable database configured through `TEST_DATABASE_URL`; their execution is not claimed.
+- FastAPI `BackgroundTasks` remain process-local and non-durable. A backend process restart can interrupt pending document processing; this is the agreed lightweight local approach, not a durable queue.
+- No push or merge occurred. Changes from 4D–4F remain uncommitted pending review and separate commit approval.
+
+### Required verification command
+
+From the `backend/` directory, install the updated requirements and run:
+
+```bash
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests -v
+```
+
+For the PostgreSQL-backed integrity tests, configure `TEST_DATABASE_URL` to a dedicated disposable PostgreSQL database whose database name contains `test`, then rerun the suite. The tests drop and recreate application tables in that dedicated database; do not point it at the application database.
+
+### Outcome and next action
+
+Phase 4D and 4E test implementation is recorded as implemented. Phase 4F static review is recorded as performed. Phase 4 remains **In Progress / Awaiting Runtime Verification** until the project owner runs the backend suite and supplies the actual output. Any failures must be reviewed and fixed before Phase 4 can be accepted.
+

@@ -283,8 +283,8 @@ Do not assume that a previous conversation's proposed changes were implemented, 
 
 The current priority is:
 
-**Phase 2 — Database Design and Data Integrity is complete. Proceed with Phase 3 — File Storage and Upload Security.**
+**Phases 0–3 are complete and Phase 4 — Backend Functional Completion is the current priority.**
 
-Continue local-first development. Do not introduce AWS resources or integration during Phase 3. Before starting, inspect the current repository state and Phase 3 checklist, review the existing storage implementation and its dependencies, then present findings and proposed scope for approval.
+Continue local-first development. Do not introduce AWS resources or integration during Phase 4. Inspect the current repository state and Phase 4 checklist before continuing. The Phase 4 implementation is being developed on `feature/phase-4-document-management`; 4A–4C are committed, while 4D–4F changes are awaiting runtime verification and separate commit approval.
 
 The project owner must approve repository changes, commits, pushes, merges, and any AWS transition separately.

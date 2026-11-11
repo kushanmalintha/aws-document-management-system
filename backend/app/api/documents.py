@@ -740,6 +740,16 @@ def delete_document_version(
         storage_service.delete(version.s3_key)
         storage_deleted = True
 
+        record_activity(
+            db=db,
+            user_id=current_user.id,
+            action="DOCUMENT_VERSION_DELETED",
+            document_id=document.id,
+            metadata_json={
+                "name": document.name,
+                "version_number": version.version_number,
+            },
+        )
         db.delete(version)
         db.commit()
 
