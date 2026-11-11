@@ -405,7 +405,8 @@ The implementation is merged and the project owner has reported successful phase
 
 ## 4.3 Document Versioning
 
-- [ ] Review version creation.- [ ] Review version numbering.
+- [ ] Review version creation.
+- [ ] Review version numbering.
 - [ ] Review version history.
 - [ ] Review current-version handling.
 - [ ] Review selected-version download.
@@ -425,14 +426,11 @@ The implementation is merged and the project owner has reported successful phase
 
 ## 4.5 Activity History
 
-- [ ] Review activity recording.
-- [ ] Verify upload activity.
-- [ ] Verify download activity.
-- [ ] Verify deletion activity.
-- [ ] Verify rename and move activity.
-- [ ] Verify version creation activity.
-- [ ] Verify activity ownership.
-- [ ] Verify activity listing and pagination if applicable.
+- [I] Activity recording is implemented for folder create/rename/delete; document upload/download/delete/rename/move; version upload/download/deletion; and processing completion/failure.
+- [I] Authenticated activity listing supports user scoping, document filtering, and bounded pagination.
+- [I] API workflow tests added for activity listing, filters, pagination, authentication, and activity generation from folder/document operations.
+- [ ] Execute the activity-history tests and verify persisted records against PostgreSQL.
+- [ ] Verify activity ordering and user isolation in a running PostgreSQL-backed workflow.
 
 ## 4.6 Administration and Optional Sharing
 
@@ -444,6 +442,8 @@ The implementation is merged and the project owner has reported successful phase
 - [ ] Verify expiry and revoke behavior if implemented.
 
 ### Phase 4 Acceptance Criteria
+
+**Current status:** 4A–4C implementation is committed on the feature branch. 4D activity-history additions and 4E API workflow tests are implemented in uncommitted working changes. 4F static review is complete, but runtime test execution is pending. Do not mark Phase 4 verified or complete until the backend test suite and any required PostgreSQL-backed checks have been executed and results recorded.
 
 - Required backend workflows function correctly.
 - Document and folder ownership is enforced.
