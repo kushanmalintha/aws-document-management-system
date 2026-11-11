@@ -1,75 +1,143 @@
 # AWS Document Management System
 
-A learning-focused Document Management System built locally first and progressively migrated to AWS.
+A learning-focused document management application built with React, FastAPI, and PostgreSQL. The project is being developed locally first, with AWS integration planned as a later stage.
 
-## Project Goals
+## Overview
 
-The project is designed to learn and apply:
+The system allows registered users to organize documents into folders, upload and manage document versions, download their files, and review activity history. The backend owns authentication, authorization, metadata integrity, upload validation, and access to stored files.
 
-- Python
-- FastAPI
-- React
-- PostgreSQL
-- Docker
-- Git/GitHub
-- Amazon S3
-- Amazon RDS
-- Amazon ECS/Fargate
-- Amazon ECR
-- Application Load Balancer
-- AWS Lambda
-- Amazon SQS
-- Amazon SNS
-- AWS Secrets Manager
-- Amazon CloudWatch
-- AWS CloudTrail
-- Route 53
-- ACM
-- CloudFront
-- Terraform
-- GitHub Actions
-- AWS security and cost management
+**Current implementation:** the application runs locally using Docker Compose, PostgreSQL, and filesystem-based document storage. AWS services are not integrated yet.
 
-## Architecture Approach
+## Features
 
-The application is developed locally first.
+- User registration, login, logout, and authenticated routes.
+- User profile viewing and display-name updates.
+- Folder creation, listing, renaming, nesting, and deletion.
+- Document upload, listing, search, filtering, and sorting.
+- Document rename and movement between folders or the root.
+- Authenticated document downloads.
+- Document version uploads, version history, and deletion of non-current historical versions.
+- Soft deletion of documents, retaining their metadata, versions, and stored files.
+- Activity history for document and folder operations.
+- Document processing status with background checksum verification.
+- Request validation, standardized API errors, request IDs, and structured application logging.
 
-Initial architecture:
+## Technology Stack
+
+| Area | Technology |
+|---|---|
+| Frontend | React 19, Vite, React Router, Axios |
+| Backend | Python 3.12, FastAPI, Pydantic |
+| Database | PostgreSQL 17, SQLAlchemy, Alembic |
+| Authentication | JWT bearer access tokens, Argon2 password hashing |
+| File storage | Local filesystem storage through a storage service abstraction |
+| Local deployment | Docker, Docker Compose, Nginx |
+| Frontend testing | Vitest, React Testing Library |
+| Backend testing | Python unittest-based unit, API workflow, and PostgreSQL integration tests |
+
+## Current Architecture
 
 ```text
-React
+Browser
   |
   v
-FastAPI
+React frontend (Vite in development / Nginx in Docker)
   |
+  | HTTP API requests
   v
-PostgreSQL
-
-FastAPI
-  |
-  v
-Local document storage
+FastAPI backend
+  |                 |
+  v                 v
+PostgreSQL      Local document storage
+(users,         (uploaded file binaries
+folders,         and version files)
+documents,
+versions,
+activities)
 ```
 
-Local document storage is implemented behind a storage abstraction so it can later be replaced by Amazon S3.
+Docker Compose runs three services:
 
-The eventual AWS architecture will progressively introduce managed AWS services. AWS integration is intentionally deferred until the local application is complete and verified.
+- **PostgreSQL:** stores users, folders, document metadata, version metadata, and activity records.
+- **Backend:** exposes the FastAPI REST API, applies database migrations at container startup, validates uploads, enforces access controls, and reads/writes document files.
+- **Frontend:** serves the production React build through Nginx and proxies API requests to the backend.
 
-## Local Environment Configuration
+Document binaries are stored outside PostgreSQL. The local storage service uses generated storage keys rather than user-supplied paths. PostgreSQL data and document files are persisted in separate named Docker volumes.
 
-The repository contains example environment files. Create local copies and customize them before starting the application:
+## Main Backend Areas
 
-| Local file | Example file | Purpose |
-|---|---|---|
-| `.env` | `.env.example` | Docker Compose and PostgreSQL credentials/host ports |
-| `backend/.env` | `backend/.env.example` | FastAPI application, database, JWT, CORS, and local storage settings |
-| `frontend/.env` | `frontend/.env.example` | Vite development API URL when running the frontend outside Docker |
+The backend is organized under `backend/app`:
 
-Do not overwrite an existing local environment file. If one already exists, retain its values and add any newly required variables manually.
+- `api/` — authentication, users, folders, documents, and activity endpoints.
+- `core/` — configuration, security dependencies, logging, and API error/request observability.
+- `db/` — SQLAlchemy database setup and Alembic migrations.
+- `models/` — database entities.
+- `schemas/` — request and response schemas.
+- `services/` — activity recording, document processing, storage, and upload validation.
+- `infrastructure/` — infrastructure adapters; the local filesystem adapter is implemented, while the AWS package is currently a placeholder.
 
-### Create the local files
+## Repository Structure
 
-From the repository root, on macOS/Linux/Git Bash:
+```text
+.
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   ├── core/
+│   │   ├── db/migrations/
+│   │   ├── infrastructure/
+│   │   ├── models/
+│   │   ├── schemas/
+│   │   └── services/
+│   ├── tests/
+│   ├── .env.example
+│   ├── Dockerfile
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── config/
+│   │   ├── context/
+│   │   ├── hooks/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   └── styles/
+│   ├── .env.example
+│   ├── Dockerfile
+│   └── package.json
+├── docs/
+│   └── testing/
+├── infrastructure/
+│   └── terraform/       # Reserved for planned AWS infrastructure
+├── lambda/              # Reserved for planned AWS functions
+├── scripts/
+├── tests/
+├── .github/
+├── .env.example
+├── docker-compose.yml
+└── README.md
+```
+
+The `infrastructure/terraform` and `lambda` directories are placeholders; they do not mean AWS resources or Lambda functions have been deployed.
+
+## Prerequisites
+
+For the recommended Docker-based setup:
+
+- Git
+- Docker Desktop, or Docker Engine with the Docker Compose plugin
+
+For running components directly on the host:
+
+- Python 3.12
+- Node.js 22 and npm
+- A PostgreSQL instance
+
+## Local Environment Setup
+
+The repository includes example environment files. Create local copies from the repository root.
+
+**macOS / Linux / Git Bash:**
 
 ```sh
 cp .env.example .env
@@ -77,7 +145,7 @@ cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
 
-On Windows PowerShell:
+**Windows PowerShell:**
 
 ```powershell
 Copy-Item .env.example .env
@@ -85,143 +153,166 @@ Copy-Item backend/.env.example backend/.env
 Copy-Item frontend/.env.example frontend/.env
 ```
 
-The frontend environment file is optional for Docker Compose because the containerized frontend uses the Nginx same-origin API proxy. It is used when starting the Vite development server directly.
+If a local environment file already exists, do not overwrite it. Retain its values and add any newly required settings manually.
 
-### Set local secrets
+Update the following values before starting the application:
 
-The example values are placeholders, not secure credentials. Replace them in your local files before running the application:
+- In the root `.env`, replace the example `POSTGRES_PASSWORD` with a unique, strong local database password.
+- In `backend/.env`, set `POSTGRES_PASSWORD` to the same database password.
+- In `backend/.env`, replace `JWT_SECRET_KEY` with a separate randomly generated secret.
 
-- Set a unique, strong `POSTGRES_PASSWORD` in the root `.env`.
-- Set a separate, randomly generated `JWT_SECRET_KEY` in `backend/.env`.
-- Do not reuse database passwords as JWT signing secrets.
-- Keep real credentials and local `.env` files out of Git.
-
-Generate a random JWT secret with Python:
+Generate a JWT secret using Python:
 
 ```sh
 python -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
-Copy the generated value into `backend/.env` as the value of `JWT_SECRET_KEY`. Generate a separate password for PostgreSQL and store it only in the root `.env`.
+Do not reuse the database password as the JWT secret. Keep real credentials in local ignored `.env` files; never commit secrets.
 
-The backend validates its settings at startup:
+### Environment file roles
 
-- `ENVIRONMENT` must be `development`, `testing`, or `production`.
-- `POSTGRES_PORT` must be between 1 and 65535.
-- `JWT_SECRET_KEY` must be at least 32 characters and must not be a placeholder.
-- `JWT_ALGORITHM` is restricted to `HS256`.
-- `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` must be between 1 and 1440.
-- `MAX_UPLOAD_SIZE_BYTES` must be positive.
+| File | Purpose |
+|---|---|
+| `.env` | Docker Compose PostgreSQL credentials and host port mappings |
+| `backend/.env` | FastAPI settings, database connection, JWT, CORS, upload limits, and local storage |
+| `frontend/.env` | Vite development API URL when running the frontend directly |
 
-### CORS configuration
+The backend CORS setting, `CORS_ALLOWED_ORIGINS`, must contain explicit HTTP(S) origins. The example includes the local Vite and Docker frontend origins. Update it to the exact trusted origins when changing local ports or deploying elsewhere.
 
-Set `CORS_ALLOWED_ORIGINS` in `backend/.env` as a JSON array of explicit origins, for example:
+## Run with Docker Compose (Recommended)
 
-```env
-CORS_ALLOWED_ORIGINS=["http://localhost:5173","http://127.0.0.1:5173","http://localhost:8080","http://127.0.0.1:8080"]
-```
-
-These defaults cover the local Vite development server and Docker-served frontend. For a deployed environment, replace them with the exact trusted frontend origins using HTTPS. Wildcard origins are not accepted because credentialed CORS is enabled.
-
-### Database connection settings
-
-The root `.env` supplies the PostgreSQL database name, username, password, and host port to Docker Compose. Within the Compose network, the backend connects to the database using hostname `postgres` and port `5432`; Compose supplies these internal connection values to the backend container.
-
-When running the backend directly on the host, the example backend settings use `localhost:5433`, which is the default host port mapped to PostgreSQL by Compose.
-
-### Frontend API URL
-
-The Vite example uses:
-
-```env
-VITE_API_BASE_URL=http://localhost:8000
-```
-
-This is for a frontend development server running on the host. The Dockerized frontend is served by Nginx and proxies `/api/` requests to the backend container, so it does not need this host-side API URL.
-
-## Run the application with Docker Compose
-
-Docker Compose runs PostgreSQL, the FastAPI backend, and the built React frontend. The backend applies Alembic migrations when it starts. PostgreSQL data and uploaded documents are stored in named Docker volumes and persist when the containers stop.
-
-1. Complete the local environment file setup described above.
-2. Ensure Docker Desktop (or Docker Engine with the Compose plugin) is running.
-3. Start the application from the repository root:
-
-   ```sh
-   docker compose up --build
-   ```
-
-4. Open the frontend at `http://localhost:8080`. The backend API and interactive documentation are available at `http://localhost:8000` and `http://localhost:8000/docs` by default.
-
-The frontend proxies API and health requests to the backend, so browser requests use the same origin. The database is also available on `localhost:5433` by default. Set `FRONTEND_PORT`, `BACKEND_PORT`, and `POSTGRES_PORT` in the root `.env` to use different host ports.
-
-Stop the containers with:
+Run these commands from the repository root after configuring the environment files:
 
 ```sh
+docker compose config --quiet
+docker compose build
+docker compose up -d
+docker compose ps
+```
+
+The backend waits for PostgreSQL to become healthy, runs Alembic migrations, and then starts Uvicorn. The frontend waits for backend readiness.
+
+Default local addresses:
+
+| Component | Address |
+|---|---|
+| React application | http://localhost:8080 |
+| FastAPI API | http://localhost:8000 |
+| Interactive API documentation | http://localhost:8000/docs |
+| Backend readiness check | http://localhost:8000/health/ready |
+| PostgreSQL | localhost:5433 |
+
+The frontend is served by Nginx and uses a same-origin API proxy. Host ports can be changed through `FRONTEND_PORT`, `BACKEND_PORT`, and `POSTGRES_PORT` in the root `.env`.
+
+Useful commands:
+
+```sh
+# Follow service logs
+docker compose logs -f
+
+# Restart services
+docker compose restart
+
+# Stop and remove containers/network (preserves named volumes)
 docker compose down
+
+# Rebuild images and recreate services
+docker compose up -d --build
 ```
 
-This keeps the database and uploaded documents in their named volumes for the next startup. To remove the containers and volumes, use `docker compose down --volumes`; this permanently deletes the local PostgreSQL data and uploaded documents.
+**Data warning:** `docker compose down` preserves the named PostgreSQL and document-storage volumes. `docker compose down --volumes` removes those volumes and permanently deletes the corresponding local database and uploaded-file data.
 
-## Core Features
+## Run Components Directly (Development)
 
-- User registration
-- User login
-- User profile
-- Folder management
-- Document upload with server-side extension, size, filename, and basic content-signature validation
-- Document viewing
-- Document search
-- Document filtering
-- Authenticated document downloads with ownership checks
-- Document rename and movement between folders or the root
-- Document version uploads, retained version history, and deletion of non-current historical versions
-- Soft deletion that retains document metadata, versions, and physical files
-- Activity tracking
-- Document processing status
-- Optional document sharing
+The Docker Compose workflow is the recommended way to start the complete system. To work on the frontend or backend separately, start PostgreSQL independently and configure the backend to connect to it.
 
-## Repository Structure
+### Backend
 
-```text
-.
-├── backend/
-├── frontend/
-├── lambda/
-├── infrastructure/
-├── docs/
-├── tests/
-├── scripts/
-├── .github/
-├── .env.example
-├── docker-compose.yml
-└── README.md
+From the repository root:
+
+```sh
+cd backend
+python -m venv .venv
 ```
 
-## Security Notes
+Activate the environment:
 
-- Never commit `.env` files or real credentials.
-- Keep `.env.example` files limited to placeholders and non-sensitive defaults.
-- Do not commit AWS access keys, private keys, database dumps, or Terraform state.
-- Registration always assigns the standard `user` role; role assignment is not accepted from public registration input.
-- Passwords are hashed using the configured recommended password-hashing implementation.
-- Logging out increments the account's token version and invalidates all access tokens issued before that logout. This is account-wide rather than per-device logout.
-- Local document binaries are stored outside PostgreSQL using generated storage keys and a filesystem storage boundary.
-- Storage keys are validated to reject traversal, absolute paths, and symlink paths; storage writes do not overwrite existing files.
-- Upload validation checks configured extensions, filename length, actual file size, empty files, and basic content signatures/container structure. This is not antivirus scanning or complete file-format validation.
-- Document deletion is soft deletion: normal listings and downloads exclude deleted documents, while metadata, version history, and physical files are retained.
-- Use local configuration only for local development. Cloud secrets and permissions will be handled through appropriate AWS services during the later AWS implementation phase.
+```sh
+# macOS / Linux / Git Bash
+source .venv/bin/activate
 
-## Project Development Approach
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+```
 
-Work is divided into two major stages:
+Install dependencies and start the API:
 
-1. **Local completion:** implement, test, and verify the application using the local stack.
-2. **AWS implementation:** progressively introduce the planned AWS services after the local acceptance criteria have been met.
+```sh
+python -m pip install -r requirements.txt
+alembic upgrade head
+uvicorn app.main:app --reload
+```
 
-Do not create or depend on AWS resources during local completion.
+The backend reads its settings from `backend/.env`. For direct host execution, the example database host and port are `localhost:5433`, matching the default PostgreSQL host mapping in Docker Compose.
 
+### Frontend
 
-## Docker operations and recovery
+Open a separate terminal:
 
-For clean-clone setup, environment configuration, Compose startup and health checks, restart procedures, persistence, coordinated PostgreSQL/document-storage backup and restore, and troubleshooting, see [Docker and Local Operations](docs/operations/DOCKER_LOCAL_OPERATIONS.md).
+```sh
+cd frontend
+npm ci
+npm run dev
+```
+
+The Vite development server uses `VITE_API_BASE_URL` from `frontend/.env` (default `http://localhost:8000`). Vite prints the frontend URL when it starts.
+
+## Testing and Quality Checks
+
+Backend tests:
+
+```sh
+cd backend
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests -v
+```
+
+Frontend tests and checks:
+
+```sh
+cd frontend
+npm ci
+npm test
+npm run lint
+npm run build
+```
+
+PostgreSQL-backed backend integration tests require a separate disposable test database configured through `TEST_DATABASE_URL`. These tests drop and recreate tables in that database. Never point this variable at a normal development, staging, or production database. Read [Testing Guide](docs/testing/TESTING.md) before running the PostgreSQL integration tests.
+
+Running a command is not evidence that it passed; review and record its actual output. Docker startup and API health checks do not replace automated test execution.
+
+## Security and Data Handling
+
+- Passwords are hashed with Argon2; plaintext passwords are not stored.
+- Authenticated API routes use JWT bearer access tokens.
+- Public registration assigns the standard user role; a role is not accepted from public registration input.
+- Backend ownership checks protect user folders, documents, and downloads. Frontend route guards are not the security boundary.
+- Upload validation checks allowed extensions, filename constraints, file size, empty files, and basic file-content signatures/structure.
+- Stored file names/keys are generated by the backend. The local storage layer validates storage keys and prevents unsafe path traversal.
+- Document binaries are stored in the local filesystem volume; metadata and version records are stored in PostgreSQL.
+- Document deletion is soft deletion. The document is hidden from normal listings and downloads, while its metadata, version history, and physical files are retained.
+- The current browser frontend stores its bearer access token in localStorage. This is not equivalent to an HttpOnly cookie; protecting the application against cross-site scripting remains important.
+- The document-processing task currently uses FastAPI in-process background tasks. It verifies stored file checksums; it is not a durable queue or a full content-extraction/antivirus pipeline.
+
+These controls describe the current implementation and should not be interpreted as a complete production security certification.
+
+## AWS Learning Stage (Planned)
+
+AWS is the next planned project stage, not part of the current running application. The repository has reserved locations for future AWS infrastructure and backend adapters, but no AWS resources or cloud integrations are described as implemented here.
+
+The AWS phase will be planned and implemented separately, building on the local application and its storage abstraction. AWS services, deployment topology, IAM permissions, networking, observability, and cost controls will be documented as they are actually introduced.
+
+## Documentation
+
+- [Testing Guide](docs/testing/TESTING.md)
+
