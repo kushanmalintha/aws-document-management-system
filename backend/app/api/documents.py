@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Depends,
     File,
     Form,
@@ -36,6 +37,10 @@ from app.schemas.document import (
     RenameDocumentRequest,
 )
 from app.services.activity_service import record_activity
+from app.services.document_processing import (
+    schedule_document_processing,
+    transition_document_status,
+)
 from app.services.storage import storage_service
 from app.services.upload_validation import (
     UPLOAD_CHUNK_SIZE,
@@ -58,6 +63,7 @@ logger = logging.getLogger(__name__)
     status_code=status.HTTP_201_CREATED,
 )
 async def upload_document(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     folder_id: UUID | None = Form(default=None),
     current_user: User = Depends(get_current_user),
@@ -132,7 +138,7 @@ async def upload_document(
         storage_saved = True
 
         document.s3_key = storage_key
-        document.status = DocumentStatus.UPLOADED
+        transition_document_status(document, DocumentStatus.UPLOADED)
         document.current_version = 1
 
         initial_version = DocumentVersion(
@@ -184,6 +190,7 @@ async def upload_document(
         await file.close()
 
     db.refresh(document)
+    schedule_document_processing(background_tasks, document.id, 1)
 
     return DocumentResponse.model_validate(document)
 
@@ -425,6 +432,7 @@ def move_document(
 )
 async def upload_document_version(
     document_id: UUID,
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -513,7 +521,7 @@ async def upload_document_version(
         document.current_version = new_version_number
         document.s3_key = storage_key
         document.size_bytes = size_bytes
-        document.status = DocumentStatus.UPLOADED
+        transition_document_status(document, DocumentStatus.UPLOADED)
 
         record_activity(
             db=db,
@@ -553,6 +561,7 @@ async def upload_document_version(
     finally:
         await file.close()
 
+    schedule_document_processing(background_tasks, document.id, new_version_number)
     return DocumentResponse.model_validate(document)
 
 
