@@ -377,6 +377,11 @@ The implementation is merged and the project owner has reported successful phase
 
 **Objective:** Verify and complete the backend functionality required by the application.
 
+**Implementation status:** Phase 4A–4F implementation and associated test coverage are committed on `feature/phase-4-document-management`. This includes document rename/move, safe deletion of non-current versions, lightweight local processing, activity-history completion, API workflow tests, and static final review. The latest commit is `08131a0e1ce2e31202decf19ff1ab3ba6eb61671`. The branch has not been pushed or merged.
+
+**Verification status:** Runtime tests have not yet been executed by the project owner. Items below that require runtime behavior or persisted PostgreSQL evidence remain unchecked until actual results are recorded. Do not treat implementation or test-file creation as proof that tests pass.
+
+
 ## 4.1 Folder Management
 
 - [ ] Review folder creation.
@@ -443,7 +448,7 @@ The implementation is merged and the project owner has reported successful phase
 
 ### Phase 4 Acceptance Criteria
 
-**Current status:** 4A–4C implementation is committed on the feature branch. 4D activity-history additions and 4E API workflow tests are implemented in uncommitted working changes. 4F static review is complete, but runtime test execution is pending. Do not mark Phase 4 verified or complete until the backend test suite and any required PostgreSQL-backed checks have been executed and results recorded.
+**Current status:** 4A–4F implementation and test-coverage changes are committed on the feature branch. Static review is complete, but runtime test execution is pending. Do not mark Phase 4 verified or complete until the backend test suite and any required PostgreSQL-backed checks have been executed and results recorded.
 
 - Required backend workflows function correctly.
 - Document and folder ownership is enforced.

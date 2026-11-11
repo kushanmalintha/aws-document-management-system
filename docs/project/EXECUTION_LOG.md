@@ -689,3 +689,44 @@ For the PostgreSQL-backed integrity tests, configure `TEST_DATABASE_URL` to a de
 
 Phase 4D and 4E test implementation is recorded as implemented. Phase 4F static review is recorded as performed. Phase 4 remains **In Progress / Awaiting Runtime Verification** until the project owner runs the backend suite and supplies the actual output. Any failures must be reviewed and fixed before Phase 4 can be accepted.
 
+
+
+---
+
+## Entry 009 — Phase 4 Documentation Synchronization and Commit Record
+
+**Date:** 2026-11-11  
+**Phase:** 4 — Backend Functional Completion  
+**Status:** Implementation Committed / Awaiting Runtime Verification  
+**Activity type:** Documentation review and status synchronization
+
+### Objective
+
+Synchronize the project instructions, current status, and local-completion checklist with the latest Phase 4 branch state without overstating verification.
+
+### Repository state reviewed
+
+- Branch: `feature/phase-4-document-management`
+- Latest implementation commit: `08131a0e1ce2e31202decf19ff1ab3ba6eb61671`
+- Commit message: `Activity history and API workflow coverage`
+- Phase 4A–4F implementation and test-coverage changes are committed on the branch.
+- The branch has not been pushed or merged.
+
+### Documentation changes
+
+- Updated `AGENTS.md` to reflect that Phase 4A–4F changes are committed and runtime verification is the remaining immediate task.
+- Updated `docs/project/PROJECT_STATUS.md` to record the current branch head, implementation status, and exact next verification steps. Removed stale statements that Phase 4 had not started and that Phase 4D–4F changes were uncommitted.
+- Updated `docs/local-completion/TASK_CHECKLIST.md` to distinguish committed implementation from pending runtime verification.
+- Preserved the earlier execution entries as historical records. This entry supersedes the working-state note in Entry 008 that described 4D–4F as uncommitted at that time.
+
+### Verification status and limitations
+
+- Documentation consistency was reviewed against the current feature branch and commit history.
+- No backend tests were executed as part of this documentation update.
+- Phase 4 remains **Awaiting Runtime Verification**. No automated test pass, PostgreSQL integration pass, or full Phase 4 acceptance is claimed.
+- No AWS resources were created.
+- No push or merge was performed.
+
+### Next action
+
+From `backend/`, run `python -m pip install -r requirements.txt` followed by `python -m unittest discover -s tests -v`. Review all failures. Execute PostgreSQL-backed checks only against the dedicated disposable test database configured through `TEST_DATABASE_URL`, then record actual results before marking Phase 4 verified.
