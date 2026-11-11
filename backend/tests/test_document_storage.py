@@ -292,5 +292,152 @@ class DocumentRenameAndMoveTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 404)
 
 
+
+class DocumentVersionDeletionTests(unittest.TestCase):
+    def setUp(self):
+        from io import BytesIO
+
+        self.user_id = uuid4()
+        self.other_user_id = uuid4()
+        self.document_id = uuid4()
+        self.user = SimpleNamespace(id=self.user_id)
+        self.document = SimpleNamespace(
+            id=self.document_id,
+            user_id=self.user_id,
+            deleted_at=None,
+            current_version=3,
+        )
+        self.version = SimpleNamespace(
+            document_id=self.document_id,
+            version_number=2,
+            s3_key="documents/user/document/v2/file.pdf",
+        )
+
+        self.document_query = Mock()
+        self.document_query.filter.return_value.with_for_update.return_value.first.return_value = (
+            self.document
+        )
+        self.version_query = Mock()
+        self.version_query.filter.return_value.first.return_value = self.version
+
+        self.db = Mock()
+        self.db.query.side_effect = self._query
+        self._stored_file = BytesIO(b"version-two-content")
+
+    def _query(self, model):
+        if model is document_api.Document:
+            return self.document_query
+        if model is document_api.DocumentVersion:
+            return self.version_query
+        raise AssertionError(f"Unexpected model queried: {model}")
+
+    @patch("app.api.documents.storage_service")
+    def test_deletes_non_current_version_and_preserves_current_number(
+        self, storage_mock
+    ):
+        storage_mock.read.return_value = self._stored_file
+
+        result = document_api.delete_document_version(
+            self.document_id, 2, self.user, self.db
+        )
+
+        self.assertIsNone(result)
+        self.db.delete.assert_called_once_with(self.version)
+        self.db.commit.assert_called_once()
+        self.assertEqual(self.document.current_version, 3)
+        storage_mock.delete.assert_called_once_with(self.version.s3_key)
+
+    @patch("app.api.documents.storage_service")
+    def test_rejects_current_version_deletion(self, storage_mock):
+        self.version.version_number = 3
+
+        with self.assertRaises(HTTPException) as raised:
+            document_api.delete_document_version(
+                self.document_id, 3, self.user, self.db
+            )
+
+        self.assertEqual(raised.exception.status_code, 409)
+        storage_mock.read.assert_not_called()
+        storage_mock.delete.assert_not_called()
+        self.db.delete.assert_not_called()
+        self.db.commit.assert_not_called()
+
+    @patch("app.api.documents.storage_service")
+    def test_rejects_another_users_document(self, storage_mock):
+        other_user = SimpleNamespace(id=self.other_user_id)
+
+        with self.assertRaises(HTTPException) as raised:
+            document_api.delete_document_version(
+                self.document_id, 2, other_user, self.db
+            )
+
+        self.assertEqual(raised.exception.status_code, 403)
+        storage_mock.read.assert_not_called()
+        self.db.delete.assert_not_called()
+
+    @patch("app.api.documents.storage_service")
+    def test_rejects_deleted_document(self, storage_mock):
+        self.document.deleted_at = datetime.now(timezone.utc)
+
+        with self.assertRaises(HTTPException) as raised:
+            document_api.delete_document_version(
+                self.document_id, 2, self.user, self.db
+            )
+
+        self.assertEqual(raised.exception.status_code, 404)
+        storage_mock.read.assert_not_called()
+
+    @patch("app.api.documents.storage_service")
+    def test_rejects_missing_version(self, storage_mock):
+        self.version_query.filter.return_value.first.return_value = None
+
+        with self.assertRaises(HTTPException) as raised:
+            document_api.delete_document_version(
+                self.document_id, 99, self.user, self.db
+            )
+
+        self.assertEqual(raised.exception.status_code, 404)
+        storage_mock.read.assert_not_called()
+
+    @patch("app.api.documents.storage_service")
+    def test_storage_delete_failure_rolls_back_without_removing_metadata(
+        self, storage_mock
+    ):
+        storage_mock.read.return_value = self._stored_file
+        storage_mock.delete.side_effect = OSError("Storage unavailable")
+
+        with self.assertRaises(HTTPException) as raised:
+            document_api.delete_document_version(
+                self.document_id, 2, self.user, self.db
+            )
+
+        self.assertEqual(raised.exception.status_code, 500)
+        self.db.rollback.assert_called_once()
+        self.db.delete.assert_not_called()
+        self.db.commit.assert_not_called()
+
+    @patch("app.api.documents.storage_service")
+    def test_database_failure_restores_deleted_file(self, storage_mock):
+        storage_mock.read.return_value = self._stored_file
+        self.db.commit.side_effect = RuntimeError("Database unavailable")
+
+        def assert_restored(file_object, storage_key):
+            self.assertEqual(storage_key, self.version.s3_key)
+            self.assertEqual(file_object.read(), b"version-two-content")
+
+        storage_mock.save.side_effect = assert_restored
+
+        with self.assertRaises(HTTPException) as raised:
+            document_api.delete_document_version(
+                self.document_id, 2, self.user, self.db
+            )
+
+        self.assertEqual(raised.exception.status_code, 500)
+        self.db.rollback.assert_called_once()
+        storage_mock.delete.assert_called_once_with(self.version.s3_key)
+        storage_mock.save.assert_called_once()
+        self.assertEqual(self.document.current_version, 3)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,4 +1,6 @@
 import logging
+import shutil
+import tempfile
 from datetime import datetime, timezone
 from pathlib import PurePosixPath
 from urllib.parse import quote
@@ -661,6 +663,109 @@ def download_document(
         },
         background=BackgroundTask(stored_file.close),
     )
+
+@router.delete(
+    "/{document_id}/versions/{version_number}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_document_version(
+    document_id: UUID,
+    version_number: int = Path(ge=1),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Serialize version mutations for this document.
+    document = (
+        db.query(Document)
+        .filter(Document.id == document_id)
+        .with_for_update()
+        .first()
+    )
+
+    if document is None or document.deleted_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
+    if document.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this document",
+        )
+
+    version = (
+        db.query(DocumentVersion)
+        .filter(
+            DocumentVersion.document_id == document.id,
+            DocumentVersion.version_number == version_number,
+        )
+        .first()
+    )
+
+    if version is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document version not found",
+        )
+
+    if version.version_number == document.current_version:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The current document version cannot be deleted",
+        )
+
+    # Keep a recoverable copy until the metadata transaction commits. This
+    # allows the stored object to be restored if the database operation fails.
+    backup = tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024, mode="w+b")
+    storage_deleted = False
+
+    try:
+        stored_file = storage_service.read(version.s3_key)
+        try:
+            shutil.copyfileobj(stored_file, backup)
+        finally:
+            stored_file.close()
+
+        backup.seek(0)
+        storage_service.delete(version.s3_key)
+        storage_deleted = True
+
+        db.delete(version)
+        db.commit()
+
+    except Exception as exc:
+        db.rollback()
+
+        if storage_deleted:
+            try:
+                backup.seek(0)
+                storage_service.save(backup, version.s3_key)
+            except Exception as restore_exc:
+                logger.exception(
+                    "Could not restore document version %s after a failed deletion",
+                    version.s3_key,
+                )
+                backup.close()
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=(
+                        "The version deletion failed and its stored file "
+                        "could not be restored"
+                    ),
+                ) from restore_exc
+
+        logger.exception("Document version deletion failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="The document version could not be deleted",
+        ) from exc
+
+    finally:
+        backup.close()
+
+    return None
+
 
 @router.get(
     "/{document_id}/versions/{version_number}/download",
