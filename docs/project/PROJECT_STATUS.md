@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-11-11  
 **Repository:** [https://github.com/kushanmalintha/aws-document-management-system](https://github.com/kushanmalintha/aws-document-management-system)  
-**Current development branch:** `feature/phase-4-document-management` (local feature work; not pushed)  
+**Current development branch:** `feature/phase-4-document-management` (committed locally on the remote branch ref; not pushed)  
 **Current development stage:** Local completion — Phase 4 backend functional completion  
 **AWS implementation:** Deferred
 
@@ -50,7 +50,7 @@ The current priority is local completion. No **AWS** resources should be created
 
 ## 3. Current Phase and Task
 
-**Current phase:** Phase 4 — Backend Functional Completion (4A–4C implemented; 4D–4F implementation and static review in progress; runtime verification pending)
+**Current phase:** Phase 4 — Backend Functional Completion (4A–4F implementation and test coverage committed; runtime verification pending)
 
 **Latest completed phase:** Phase 3 — File Storage and Upload Security
 
@@ -66,9 +66,9 @@ The Phase 1 merge is represented by merge commit 25d9ccb3a8492a5ae477b6b83a6fa5e
 
 **Remaining deferrals:** Frontend-to-backend application/API workflow verification remains assigned to Phase 5/6; detailed startup-log review remains assigned to Phase 6. Broader backend, frontend, integration, reliability, and final acceptance testing remain in their later phases. Phase 3 was accepted on the project owner's aggregate manual and automated backend test report; detailed case-by-case results and explicit PostgreSQL-backed integration coverage were not supplied.
 
-**Phase 4 implementation position:** 4A document rename/move, 4B old-version deletion, and 4C lightweight local processing are committed on the feature branch. 4D activity-history completion, 4E API workflow test coverage, and 4F static final review have been implemented/reviewed in the current working changes. The automated backend suite has not been executed in this environment; Phase 4 remains awaiting runtime verification. No push or merge has occurred.
+**Phase 4 implementation position:** 4A document rename/move, 4B safe deletion of old versions, 4C lightweight local processing, 4D activity-history completion, 4E API workflow test coverage, and 4F static final review are implemented and committed on `feature/phase-4-document-management`. The latest commit is `08131a0e1ce2e31202decf19ff1ab3ba6eb61671` (`Activity history and API workflow coverage`). The automated backend suite has not yet been executed by the project owner; Phase 4 remains **Awaiting Runtime Verification**. The branch has not been pushed or merged.
 
-**Next action:** Run the backend test suite from `backend/` using `python -m unittest discover -s tests -v`, resolve any failures, and report the actual result before marking Phase 4 verified. Continue to defer AWS resources and integration during local completion.
+**Next action:** From `backend/`, install the requirements and run `python -m unittest discover -s tests -v`. Review and resolve any failures, then run the required PostgreSQL-backed checks using a dedicated disposable database configured through `TEST_DATABASE_URL`. Record actual command output before marking Phase 4 verified. Continue to defer AWS resources and integration during local completion.
 
 Any proposed repository changes must be presented for approval before implementation.
 
@@ -190,8 +190,8 @@ The following remain outstanding and must not be treated as complete until evide
 - Frontend automated tests.
 - Broader authentication, authorization, and integrated user-isolation workflows in their assigned later phases.
 - User ownership and data-isolation checks.
-- Phase 3 manual verification of upload/download behavior, version workflows, soft-delete retention, ownership enforcement, and storage path security.
-- Full relevant backend unit and PostgreSQL-backed integration test execution for Phase 3.
+- Phase 3 detailed case-by-case test output and explicit PostgreSQL-backed integration coverage were not separately supplied; Phase 3 acceptance remains based on the project owner's aggregate manual and automated backend test report recorded in Entry 007.
+- Phase 4 backend runtime and PostgreSQL-backed integration verification.
 - Safe failure testing for storage and database failure scenarios.
 - Docker persistence and restart recovery.
 - Final local acceptance.
@@ -223,8 +223,17 @@ Before pushing, request separate approval.
 
 ## 9. Current Next Action
 
-Begin **Phase 4 — Backend Functional Completion**. Start by inspecting the current repository implementation, backend routes, services, models, schemas, authorization checks, and existing tests against the Phase 4 checklist. Identify what is already implemented, what is incomplete, and what requires verification before proposing code changes.
+Phase 4A–4F implementation and associated backend test coverage are committed on `feature/phase-4-document-management`. The latest commit is `08131a0e1ce2e31202decf19ff1ab3ba6eb61671` (`Activity history and API workflow coverage`). The branch has not been pushed or merged.
 
-Phase 3 implementation is merged into `main` in commit `d6e8f4728953e4f61d680eb8c6b643a72275e9c0`. On 2026-11-11, the project owner reported that manual testing and automated backend tests passed with no issues found. Phase 3 is accepted on that aggregate report; detailed outputs and individual case results were not supplied, and PostgreSQL-backed integration coverage was not separately confirmed.
+The next action is runtime verification. From `backend/`, run:
 
-Phase 4 remains **Not Started** until its repository review and implementation work begin. Keep the deferred frontend-to-backend workflow and startup-log review visible in their assigned later phases. Do not create AWS resources during local completion.
+```bash
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests -v
+```
+
+Review and resolve any failures. Run PostgreSQL-backed integrity checks only with a dedicated disposable database configured through `TEST_DATABASE_URL` (the database name must contain `test`; the tests may drop and recreate application tables). Record the actual output and limitations before changing Phase 4 to Verified or Complete.
+
+Phase 3 is accepted based on the project owner's aggregate manual and automated backend test report recorded in Entry 007; detailed outputs and individual case results were not supplied, and PostgreSQL-backed integration coverage was not separately confirmed.
+
+Keep the deferred frontend-to-backend workflow and startup-log review visible in their assigned later phases. Do not create AWS resources during local completion.
