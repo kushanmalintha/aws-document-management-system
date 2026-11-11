@@ -113,6 +113,13 @@ class DocumentRenameAndMoveTests(unittest.TestCase):
             deleted_at=None,
             name="report.pdf",
             folder_id=None,
+            user_id=self.user_id,
+            content_type="application/pdf",
+            size_bytes=7,
+            current_version=1,
+            status=DocumentStatus.UPLOADED,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
         self.folder = SimpleNamespace(id=self.folder_id, user_id=self.user_id)
         self.db = Mock()
