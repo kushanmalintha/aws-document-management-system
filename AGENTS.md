@@ -283,8 +283,8 @@ Do not assume that a previous conversation's proposed changes were implemented, 
 
 The current priority is:
 
-**Phase 4 implementation is merged into main but still awaits runtime verification. Phase 5 — Frontend Functional Completion and Security is the active implementation phase.**
+**Phase 4 implementation is merged into main but still awaits runtime verification. Phase 5 implementation is committed on its feature branch and awaits the dedicated testing phase. Phase 6 — API Contract, Error Handling, and Observability is implemented on its feature branch and awaits static review and commit approval; tests remain deferred.**
 
-Continue local-first development. Do not introduce AWS resources or integration during Phase 5. Inspect the current repository state and Phase 5 checklist before continuing. Phase 4A–4F implementation and backend test coverage were merged into `main` by PR #8 (merge commit `368864d4cf90d0dbc985ed07cbfb212356c21c75`). The backend test suite has not yet been run for Phase 4, so Phase 4 runtime verification remains pending. Phase 5 work is being prepared on `feature/phase-5-frontend-functional-completion`; do not treat it as committed or verified until the branch history and test evidence confirm that status.
+Continue local-first development. Do not introduce AWS resources or integration during Phases 4–11. Phase 4A–4F implementation and backend test coverage were merged into `main` by PR #8 (merge commit `368864d4cf90d0dbc985ed07cbfb212356c21c75`); Phase 4 runtime verification remains pending. Phase 5 was committed on `feature/phase-5-frontend-functional-completion` in commit `a908c531b7bb4fe309d8e4a5a1ab79212f5ecd3e`; tests, lint, and build remain deferred. Phase 6 changes are prepared for `feature/phase-6-api-error-observability` from that Phase 5 commit. The branch ref remains at its Phase 5 base until separate commit approval. Do not treat Phase 6 as committed or verified until static review, approval, and commit evidence are recorded.
 
 The project owner must approve repository changes, commits, pushes, merges, and any AWS transition separately.

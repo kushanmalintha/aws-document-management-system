@@ -785,3 +785,63 @@ The existing frontend already includes registration/login/logout, protected rout
 ### Outcome and next action
 
 Phase 5 implementation content has been prepared for `feature/phase-5-frontend-functional-completion` as Git objects, but is not yet part of the branch history. It awaits final diff review and separate commit approval. No commit, push, or merge is recorded by this entry. Continue to defer AWS resources and integration until local completion and the explicit AWS readiness gate.
+
+
+---
+
+## Entry 011 — Phase 6 API Contract, Error Handling, and Observability
+
+**Date:** 2026-11-11  
+**Phase:** 6 — API Contract, Error Handling, and Observability  
+**Target branch:** `feature/phase-6-api-error-observability` (branch ref remains at the Phase 5 base until commit approval)  
+**Base commit:** `a908c531b7bb4fe309d8e4a5a1ab79212f5ecd3e` (Phase 5 implementation commit)  
+**Status:** Implemented — awaiting static review and commit approval; runtime verification deferred  
+**Activity type:** Approved implementation; tests written but intentionally not executed
+
+### Objective
+
+Complete the approved Phase 6 implementation while retaining the local-first modular-monolith architecture and preserving the current API behavior where practical.
+
+### Implemented changes
+
+- Added a standard JSON error response with `detail`, `request_id`, and optional sanitized field-level `errors`.
+- Added centralized exception handlers for HTTP exceptions, request validation, SQLAlchemy database errors, and unexpected exceptions.
+- Preserved HTTP exception status codes and response headers, including `WWW-Authenticate`.
+- Ensured validation responses do not serialize submitted input values or validation context.
+- Added request correlation IDs (validated incoming ID or generated UUID), returned in `X-Request-ID` and error response bodies.
+- Added request logging for method, path, status code, duration, and request ID. Query strings, headers, bodies, credentials, tokens, uploaded file contents, and client IP are excluded.
+- Added configurable `LOG_LEVEL` and application startup/shutdown log events.
+- Preserved `GET /health` and `GET /health/database`; added `GET /health/ready` to verify database connectivity.
+- Updated the frontend API error helper to display sanitized validation messages and include a request reference for server errors.
+- Added backend test coverage for error handling, request IDs, logging, and health endpoints; added frontend API error-helper tests. Tests have not been run by design.
+- Added `docs/api/API_CONTRACT.md` describing actual routes, authentication, request parameters, response behavior, status codes, and the existing non-paginated document list behavior.
+- Updated the project status, checklist, and working instructions to reflect the Phase 5 commit and Phase 6 implementation state.
+
+### Files changed or added
+
+- `backend/app/main.py`
+- `backend/app/core/config.py`
+- `backend/app/core/logging.py` (new)
+- `backend/app/core/observability.py` (new)
+- `backend/app/schemas/errors.py` (new)
+- `backend/.env.example`
+- `backend/tests/test_config.py`
+- `backend/tests/test_error_handling.py` (new)
+- `backend/tests/test_health.py` (new)
+- `frontend/src/services/api.js`
+- `frontend/src/services/apiErrors.test.js` (new)
+- `docs/api/API_CONTRACT.md` (new)
+- `AGENTS.md`
+- `docs/project/PROJECT_STATUS.md`
+- `docs/project/EXECUTION_LOG.md`
+- `docs/local-completion/TASK_CHECKLIST.md`
+
+### Verification and limitations
+
+- Static source review only; no automated tests were executed.
+- Backend unittest suite, frontend Vitest suite, ESLint, production build, application startup, HTTP endpoint checks, and database readiness checks remain deferred to the agreed dedicated testing phase.
+- Phase 4 runtime verification remains pending.
+- Phase 5 frontend runtime verification remains pending.
+- No AWS resources or dependencies were introduced.
+- No commit was created. The implementation is awaiting final static review and the project owner's separate commit approval.
+

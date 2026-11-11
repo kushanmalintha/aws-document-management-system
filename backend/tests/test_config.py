@@ -42,6 +42,14 @@ class SettingsValidationTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             self._settings(environment="staging")
 
+    def test_normalizes_log_level(self):
+        settings = self._settings(log_level=" warning ")
+        self.assertEqual(settings.log_level, "WARNING")
+
+    def test_rejects_invalid_log_level(self):
+        with self.assertRaises(ValidationError):
+            self._settings(log_level="TRACE")
+
     def test_rejects_invalid_database_port(self):
         with self.assertRaises(ValidationError):
             self._settings(postgres_port=65536)
