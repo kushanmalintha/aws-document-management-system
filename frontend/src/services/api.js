@@ -1,4 +1,3 @@
-
 import axios from "axios";
 
 export const ACCESS_TOKEN_KEY = "dms_access_token";
@@ -28,41 +27,71 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// Convert common API errors into readable messages for the UI.
+export function getApiRequestId(error) {
+  const responseHeaders = error?.response?.headers;
+  const requestId =
+    error?.response?.data?.request_id ??
+    responseHeaders?.["x-request-id"] ??
+    responseHeaders?.["X-Request-ID"] ??
+    responseHeaders?.get?.("x-request-id");
+
+  return typeof requestId === "string" && requestId.trim()
+    ? requestId.trim()
+    : null;
+}
+
+// Convert both the current API error contract and legacy FastAPI errors
+// into a readable message. Server reference IDs help correlate UI errors
+// with backend request logs without exposing internal exception details.
 export function getApiErrorMessage(
   error,
   fallback = "Something went wrong. Please try again.",
 ) {
   const data = error?.response?.data;
+  let message = "";
 
   if (typeof data?.detail === "string") {
-    return data.detail;
-  }
-
-  if (Array.isArray(data?.detail)) {
-    return data.detail
-      .map((item) => item.msg)
+    const validationMessages = Array.isArray(data?.errors)
+      ? data.errors.map((item) => item?.message).filter(Boolean)
+      : [];
+    message = validationMessages.length
+      ? `${data.detail}: ${validationMessages.join(", ")}`
+      : data.detail;
+  } else if (Array.isArray(data?.errors)) {
+    message = data.errors
+      .map((item) => item?.message)
       .filter(Boolean)
       .join(", ");
+  } else if (Array.isArray(data?.detail)) {
+    message = data.detail
+      .map((item) => item?.msg)
+      .filter(Boolean)
+      .join(", ");
+  } else if (typeof data?.message === "string") {
+    message = data.message;
   }
 
-  if (typeof data?.message === "string") {
-    return data.message;
+  if (!message && error?.code === "ECONNABORTED") {
+    message = "The request timed out. Please try again.";
   }
 
-  if (error?.code === "ECONNABORTED") {
-    return "The request timed out. Please try again.";
+  if (!message && !error?.response && error?.request) {
+    message = "Unable to reach the backend. Check that the backend is running.";
   }
 
-  if (!error?.response && error?.request) {
-    return "Unable to reach the backend. Check that the backend is running.";
+  if (!message) {
+    message = fallback;
   }
 
-  return fallback;
+  const requestId = getApiRequestId(error);
+  if (requestId) {
+    return `${message} (Reference ID: ${requestId})`;
+  }
+
+  return message;
 }
 
 export default api;
-
 
 // A 401 from a protected endpoint invalidates the client session. Login
 // failures are excluded because invalid credentials are an expected response.

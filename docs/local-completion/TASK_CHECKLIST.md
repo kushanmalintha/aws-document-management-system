@@ -552,7 +552,7 @@ The implementation is merged and the project owner has reported successful phase
 
 ### Phase 5 Implementation Notes — 2026-11-11
 
-The initial frontend audit found that the majority of the core screens and workflows already existed. The following implementation additions have been prepared:
+The initial frontend audit found that the majority of the core screens and workflows already existed. The following implementation additions were committed on `feature/phase-5-frontend-functional-completion` in commit `a908c531b7bb4fe309d8e4a5a1ab79212f5ecd3e`:
 
 - Document rename and move controls on the document details page.
 - Historical-version deletion controls; the current version is not offered for deletion.
@@ -571,45 +571,45 @@ These are implementation notes, not test acceptance. Keep the verification check
 
 ## 6.1 API Contract
 
-- [ ] Review **API** route organization.
-- [ ] Review request schemas.
-- [ ] Review response schemas.
-- [ ] Review status codes.
-- [ ] Review pagination.
-- [ ] Review filtering and sorting parameters.
-- [ ] Review **API** documentation.
-- [ ] Compare implemented routes with frontend usage.
-- [ ] Document actual **API** behavior.
+- [R] Review **API** route organization.
+- [R] Review request schemas.
+- [R] Review response schemas.
+- [R] Review status codes.
+- [R] Review pagination.
+- [R] Review filtering and sorting parameters.
+- [I] Add the actual route and response contract in `docs/api/API_CONTRACT.md`.
+- [R] Compare implemented routes with frontend usage.
+- [I] Document actual **API** behavior.
 
 ## 6.2 Error Handling
 
-- [ ] Review validation errors.
-- [ ] Review authentication errors.
-- [ ] Review authorization errors.
-- [ ] Review not-found errors.
-- [ ] Review conflict errors.
-- [ ] Review database errors.
+- [I] Add sanitized validation error responses.
+- [R] Review authentication errors and preserve `WWW-Authenticate`.
+- [R] Review authorization errors.
+- [R] Review not-found errors.
+- [R] Review conflict errors.
+- [I] Add safe centralized database exception handling.
 - [ ] Review file storage errors.
-- [ ] Review unexpected exceptions.
-- [ ] Ensure internal stack traces are not exposed to users.
-- [ ] Ensure useful diagnostic information is retained in logs.
+- [I] Add safe centralized unexpected-exception handling.
+- [I] Ensure internal exception details and stack traces are not exposed to users.
+- [I] Retain request IDs and exception types in server logs.
 
 ## 6.3 Logging
 
-- [ ] Review logging configuration.
-- [ ] Ensure passwords and tokens are not logged.
-- [ ] Review request and error logging.
-- [ ] Review log severity levels.
-- [ ] Review sensitive data exposure.
+- [I] Add configurable centralized logging through `LOG_LEVEL`.
+- [I] Ensure passwords and tokens are not logged by the request logging middleware.
+- [I] Add request method/path/status/duration and correlation logging.
+- [I] Support standard Python log levels through configuration.
+- [I] Exclude query strings, credentials, tokens, headers, bodies, and file contents from request logs.
 - [ ] Verify logs are useful for troubleshooting.
 
 ## 6.4 Health and Operational Endpoints
 
-- [ ] Review health endpoint.
-- [ ] Review database readiness behavior if applicable.
+- [R] Preserve liveness and existing database health endpoints.
+- [I] Add `GET /health/ready` for database readiness.
 - [ ] Verify health endpoint response.
-- [ ] Review startup and shutdown behavior.
-- [ ] Document operational requirements.
+- [I] Add application startup and shutdown log events.
+- [I] Document operational requirements and health-check semantics in `docs/api/API_CONTRACT.md`.
 
 ### Phase 6 Acceptance Criteria
 
@@ -620,6 +620,23 @@ These are implementation notes, not test acceptance. Keep the verification check
 
 ---
 
+### Phase 6 Implementation Notes — 2026-11-11
+
+**Status:** Committed on `feature/phase-6-api-error-observability` in `6d9173b3620c2c03cd3dbc58ede5e187e2f71ee4`; runtime verification deferred; not merged. Automated tests, lint, build, and runtime verification are intentionally deferred to the dedicated testing phase.
+
+Implemented:
+- Standardized JSON errors with `detail`, `request_id`, and optional sanitized `errors`.
+- Central handlers for HTTP exceptions, request validation, SQLAlchemy errors, and unexpected exceptions. Existing HTTP status codes and `WWW-Authenticate` headers are preserved.
+- Request IDs are validated or generated, returned in `X-Request-ID`, and included in error bodies.
+- Request logs include method, path (without query string), status, duration, and request ID. Request bodies, query values, credentials, tokens, headers, uploaded files, and client IP are not logged.
+- Configurable `LOG_LEVEL`, startup/shutdown log events, and database readiness at `GET /health/ready`; `/health` and `/health/database` are retained.
+- Frontend API errors display sanitized field messages and a reference ID for server errors.
+- Backend tests for error responses, request IDs, logging, and health behavior; frontend tests for the error helper. These tests have been written but not executed.
+- Actual route behavior, pagination, filtering, sorting, authentication, and response conventions documented in `docs/api/API_CONTRACT.md`.
+
+Do not mark Phase 6 acceptance criteria verified until the dedicated test phase has executed the relevant checks and the project owner has reviewed the results.
+
+---
 # Phase 7 — Backend, Frontend, and Integration Testing
 
 **Objective:** Establish evidence that the application behaves correctly across individual components and integrated workflows.

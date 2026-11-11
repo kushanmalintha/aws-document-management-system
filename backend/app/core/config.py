@@ -13,6 +13,7 @@ LOCAL_CORS_ORIGINS = (
 class Settings(BaseSettings):
     app_name: str = "AWS Document Management System"
     environment: str = "development"
+    log_level: str = "INFO"
 
     postgres_db: str
     postgres_user: str
@@ -52,6 +53,14 @@ class Settings(BaseSettings):
         if value not in {"development", "testing", "production"}:
             raise ValueError("ENVIRONMENT must be development, testing, or production")
         return value
+
+    @field_validator("log_level")
+    @classmethod
+    def validate_log_level(cls, value: str) -> str:
+        normalized = value.strip().upper()
+        if normalized not in {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}:
+            raise ValueError("LOG_LEVEL must be DEBUG, INFO, WARNING, ERROR, or CRITICAL")
+        return normalized
 
     @field_validator("postgres_port")
     @classmethod
