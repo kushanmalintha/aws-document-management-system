@@ -622,7 +622,7 @@ These are implementation notes, not test acceptance. Keep the verification check
 
 ### Phase 6 Implementation Notes — 2026-11-11
 
-**Status:** Implementation tree prepared for `feature/phase-6-api-error-observability`; the branch ref remains at the Phase 5 base until separate commit approval. Automated tests, lint, build, and runtime verification are intentionally deferred to the dedicated testing phase.
+**Status:** Committed on `feature/phase-6-api-error-observability` in `6d9173b3620c2c03cd3dbc58ede5e187e2f71ee4`; runtime verification deferred; not merged. Automated tests, lint, build, and runtime verification are intentionally deferred to the dedicated testing phase.
 
 Implemented:
 - Standardized JSON errors with `detail`, `request_id`, and optional sanitized `errors`.
