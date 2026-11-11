@@ -51,6 +51,19 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    function handleUnauthorized() {
+      setUser(null);
+      setAuthError("");
+      setIsLoading(false);
+    }
+
+    window.addEventListener("dms:unauthorized", handleUnauthorized);
+    return () => {
+      window.removeEventListener("dms:unauthorized", handleUnauthorized);
+    };
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function restoreSession() {

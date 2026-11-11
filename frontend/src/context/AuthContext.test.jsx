@@ -109,6 +109,23 @@ describe("AuthProvider", () => {
     expect(window.localStorage.getItem(ACCESS_TOKEN_KEY)).toBe("valid-token");
   });
 
+  it("clears the in-memory session when a protected request reports an expired token", async () => {
+    window.localStorage.setItem(ACCESS_TOKEN_KEY, "expired-token");
+    vi.spyOn(api, "get").mockResolvedValue({ data: profile });
+
+    render(
+      <AuthProvider>
+        <AuthProbe />
+      </AuthProvider>,
+    );
+
+    expect(await screen.findByText(profile.email)).toBeInTheDocument();
+    window.dispatchEvent(new Event("dms:unauthorized"));
+
+    expect(await screen.findByText("Signed out")).toBeInTheDocument();
+    expect(window.localStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull();
+  });
+
   it("stores a login token and clears it on logout even if logout fails", async () => {
     vi.spyOn(api, "post")
       .mockResolvedValueOnce({

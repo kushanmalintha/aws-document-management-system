@@ -48,6 +48,22 @@ export async function getDocuments({
     : documents;
 }
 
+export async function renameDocument(documentId, name) {
+  const response = await api.patch(`/api/documents/${documentId}`, { name });
+  return response.data;
+}
+
+export async function moveDocument(documentId, folderId = null) {
+  const response = await api.patch(`/api/documents/${documentId}/move`, {
+    folder_id: folderId,
+  });
+  return response.data;
+}
+
+export async function deleteDocumentVersion(documentId, versionNumber) {
+  await api.delete(`/api/documents/${documentId}/versions/${versionNumber}`);
+}
+
 export async function getDocument(documentId) {
   const response = await api.get(`/api/documents/${documentId}`);
   return response.data;
@@ -112,15 +128,28 @@ export async function uploadDocument(file, onProgress, folderId) {
   return response.data;
 }
 
-export async function downloadDocument(documentId) {
-  const response = await api.get(
-    `/api/documents/${documentId}/download`,
-    {
-      responseType: "blob",
-    },
-  );
+async function normalizeBlobError(error) {
+  const responseData = error?.response?.data;
+  if (typeof Blob !== "undefined" && responseData instanceof Blob) {
+    try {
+      error.response.data = JSON.parse(await responseData.text());
+    } catch {
+      // Preserve non-JSON response data.
+    }
+  }
+  return error;
+}
 
-  return response.data;
+export async function downloadDocument(documentId) {
+  try {
+    const response = await api.get(
+      `/api/documents/${documentId}/download`,
+      { responseType: "blob" },
+    );
+    return response.data;
+  } catch (error) {
+    throw await normalizeBlobError(error);
+  }
 }
 
 export async function downloadDocumentVersion(documentId, versionNumber) {
@@ -134,16 +163,6 @@ export async function downloadDocumentVersion(documentId, versionNumber) {
 
     return response.data;
   } catch (error) {
-    const responseData = error?.response?.data;
-
-    if (responseData instanceof Blob) {
-      try {
-        error.response.data = JSON.parse(await responseData.text());
-      } catch {
-        // Leave non-JSON blob errors to the shared fallback message.
-      }
-    }
-
-    throw error;
+    throw await normalizeBlobError(error);
   }
 }

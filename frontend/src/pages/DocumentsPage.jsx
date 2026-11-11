@@ -2,7 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { getApiErrorMessage } from "../services/api";
-import { ALLOWED_DOCUMENT_EXTENSIONS } from "../config/documentUpload";
+import {
+  ALLOWED_DOCUMENT_EXTENSIONS,
+  MAX_DOCUMENT_UPLOAD_SIZE_BYTES,
+  MAX_DOCUMENT_UPLOAD_SIZE_LABEL,
+} from "../config/documentUpload";
 import {
   deleteDocument,
   downloadDocument,
@@ -197,6 +201,11 @@ function DocumentsPage({ folderId, folderName, unfiledOnly = false } = {}) {
 
     if (selectedFile.size === 0) {
       setUploadError("Empty files cannot be uploaded.");
+      return;
+    }
+
+    if (selectedFile.size > MAX_DOCUMENT_UPLOAD_SIZE_BYTES) {
+      setUploadError(`The file must be ${MAX_DOCUMENT_UPLOAD_SIZE_LABEL} or smaller.`);
       return;
     }
 

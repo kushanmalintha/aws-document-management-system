@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-11-11  
 **Repository:** [https://github.com/kushanmalintha/aws-document-management-system](https://github.com/kushanmalintha/aws-document-management-system)  
-**Current development branch:** `feature/phase-4-document-management` (committed locally on the remote branch ref; not pushed)  
-**Current development stage:** Local completion — Phase 4 backend functional completion  
+**Current development branch:** `feature/phase-5-frontend-functional-completion` (created from merged Phase 4 `main`; Phase 5 changes awaiting commit review)  
+**Current development stage:** Local completion — Phase 5 frontend functional completion and security  
 **AWS implementation:** Deferred
 
 ---
@@ -32,7 +32,7 @@ The current priority is local completion. No **AWS** resources should be created
 | Backend health endpoint | Verified (user-reported) |
 | Database health/connectivity endpoint | Verified (user-reported) |
 | Frontend availability | Verified (user-reported) |
-| Frontend-to-backend application workflow | Deferred to Phase 5/6; not verified in Phase 0 |
+| Frontend-to-backend application workflow | Phase 5 implementation in progress; runtime verification deferred |
 | Startup-log review | Deferred to Phase 6 |
 | Phase 1 automated configuration/security tests | Completed (project-owner-reported; detailed output not supplied) |
 | Phase 1 token-version migration verification | Completed (project-owner-reported; command/output not supplied) |
@@ -50,7 +50,7 @@ The current priority is local completion. No **AWS** resources should be created
 
 ## 3. Current Phase and Task
 
-**Current phase:** Phase 4 — Backend Functional Completion (4A–4F implementation and test coverage committed; runtime verification pending)
+**Current phase:** Phase 5 — Frontend Functional Completion and Security (implementation prepared; runtime verification pending)
 
 **Latest completed phase:** Phase 3 — File Storage and Upload Security
 
@@ -64,11 +64,13 @@ The Phase 1 merge is represented by merge commit 25d9ccb3a8492a5ae477b6b83a6fa5e
 
 **Phase 3 status:** The file storage and upload security implementation was merged into `main` in commit `d6e8f4728953e4f61d680eb8c6b643a72275e9c0` (`Harden local document storage and upload validation`). It includes filesystem path safety and non-overwrite behavior, centralized server-side upload validation, basic content signature/container checks, SHA-256 checksums, secure streaming downloads, version validation, and the agreed soft-delete behavior that retains metadata, versions, and physical files. On 2026-11-11, the project owner reported that Phase 3 manual testing and automated backend tests passed, with no issues found. Phase 3 is therefore accepted. Detailed test output and case-by-case results were not supplied; PostgreSQL-backed integration coverage was not separately identified and is not claimed as independently verified.
 
-**Remaining deferrals:** Frontend-to-backend application/API workflow verification remains assigned to Phase 5/6; detailed startup-log review remains assigned to Phase 6. Broader backend, frontend, integration, reliability, and final acceptance testing remain in their later phases. Phase 3 was accepted on the project owner's aggregate manual and automated backend test report; detailed case-by-case results and explicit PostgreSQL-backed integration coverage were not supplied.
+**Remaining deferrals:** Phase 5 frontend/API implementation is in progress and has not yet been runtime-verified; detailed startup-log review remains assigned to Phase 6. Broader backend, frontend, integration, reliability, and final acceptance testing remain in their later phases. Phase 3 was accepted on the project owner's aggregate manual and automated backend test report; detailed case-by-case results and explicit PostgreSQL-backed integration coverage were not supplied.
 
-**Phase 4 implementation position:** 4A document rename/move, 4B safe deletion of old versions, 4C lightweight local processing, 4D activity-history completion, 4E API workflow test coverage, and 4F static final review are implemented and committed on `feature/phase-4-document-management`. The latest commit is `08131a0e1ce2e31202decf19ff1ab3ba6eb61671` (`Activity history and API workflow coverage`). The automated backend suite has not yet been executed by the project owner; Phase 4 remains **Awaiting Runtime Verification**. The branch has not been pushed or merged.
+**Phase 4 implementation position:** 4A document rename/move, 4B safe deletion of old versions, 4C lightweight local processing, 4D activity-history completion, 4E API workflow test coverage, and 4F static final review were merged into `main` by PR #8 (merge commit `368864d4cf90d0dbc985ed07cbfb212356c21c75`). The backend test suite has not yet been executed by the project owner; Phase 4 remains **Awaiting Runtime Verification**. Do not infer that merge status means runtime verification passed.
 
-**Next action:** From `backend/`, install the requirements and run `python -m unittest discover -s tests -v`. Review and resolve any failures, then run the required PostgreSQL-backed checks using a dedicated disposable database configured through `TEST_DATABASE_URL`. Record actual command output before marking Phase 4 verified. Continue to defer AWS resources and integration during local completion.
+**Phase 5 implementation position:** The frontend was reviewed against the Phase 5 checklist. Existing authentication, profile, folder, document listing/upload/download/soft-delete, search/filter/sort, version upload/download, activity history, loading states, and error states were already present. The implementation additions prepared for Phase 5 include document rename/move controls, deletion controls for non-current versions, shared client-side upload-size checks, protected-request 401 session invalidation, stricter login/registration email feedback, and focused tests. The implementation is awaiting final review/commit approval. Frontend tests, lint, and production build have not been executed.
+
+**Next action:** Complete the Phase 5 static review and record the implementation commit only after approval. Defer running the frontend suite until the agreed testing phase. Phase 4 backend runtime verification remains outstanding and must be completed with `python -m unittest discover -s tests -v` from `backend/`, plus PostgreSQL-backed checks against a dedicated disposable database configured through `TEST_DATABASE_URL`. Continue to defer AWS resources and integration during local completion.
 
 Any proposed repository changes must be presented for approval before implementation.
 
@@ -80,8 +82,8 @@ Any proposed repository changes must be presented for approval before implementa
 | 1 | Backend configuration and security foundation | Complete (merged; owner-reported verification completed) |
 | 2 | Database design and data integrity | Complete (merged; 24/24 checks project-owner-reported) |
 | 3 | File storage and upload security | Complete and accepted (project-owner-reported manual and automated backend tests passed) |
-| 4 | Backend functional completion | In Progress — implementation awaiting runtime verification |
-| 5 | Frontend functional completion and security | Not Started |
+| 4 | Backend functional completion | Merged into `main` — runtime verification pending |
+| 5 | Frontend functional completion and security | In Progress — implementation review/commit pending; runtime verification deferred |
 | 6 | API contract, error handling, and observability | Not Started |
 | 7 | Backend, frontend, and integration testing | Not Started |
 | 8 | Docker and local operational reliability | Not Started |
@@ -223,17 +225,19 @@ Before pushing, request separate approval.
 
 ## 9. Current Next Action
 
-Phase 4A–4F implementation and associated backend test coverage are committed on `feature/phase-4-document-management`. The latest commit is `08131a0e1ce2e31202decf19ff1ab3ba6eb61671` (`Activity history and API workflow coverage`). The branch has not been pushed or merged.
+Phase 4A–4F implementation and associated backend test coverage are merged into `main` by PR #8 (merge commit `368864d4cf90d0dbc985ed07cbfb212356c21c75`). Phase 4 runtime verification is still pending.
 
-The next action is runtime verification. From `backend/`, run:
+Phase 5 — Frontend Functional Completion and Security is the current implementation phase on `feature/phase-5-frontend-functional-completion`. The frontend audit and approved implementation additions are prepared; tests, lint, and production build have not been executed. Review the implementation and obtain separate commit approval before recording a commit.
+
+For Phase 4, run the backend suite from `backend/`:
 
 ```bash
 python -m pip install -r requirements.txt
 python -m unittest discover -s tests -v
 ```
 
-Review and resolve any failures. Run PostgreSQL-backed integrity checks only with a dedicated disposable database configured through `TEST_DATABASE_URL` (the database name must contain `test`; the tests may drop and recreate application tables). Record the actual output and limitations before changing Phase 4 to Verified or Complete.
+Run PostgreSQL-backed integrity checks only with a dedicated disposable database configured through `TEST_DATABASE_URL` (the database name must contain `test`; the tests may drop and recreate application tables). Record actual output before changing Phase 4 to Verified or Complete.
 
 Phase 3 is accepted based on the project owner's aggregate manual and automated backend test report recorded in Entry 007; detailed outputs and individual case results were not supplied, and PostgreSQL-backed integration coverage was not separately confirmed.
 
-Keep the deferred frontend-to-backend workflow and startup-log review visible in their assigned later phases. Do not create AWS resources during local completion.
+Keep the startup-log review assigned to Phase 6. Do not create AWS resources during local completion.

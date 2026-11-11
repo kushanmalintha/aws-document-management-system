@@ -2,23 +2,31 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const folderService = vi.hoisted(() => ({
+  getFolders: vi.fn(),
+}));
+
 const documentService = vi.hoisted(() => ({
   downloadDocument: vi.fn(),
   downloadDocumentVersion: vi.fn(),
+  deleteDocumentVersion: vi.fn(),
   getDocument: vi.fn(),
   getDocumentVersions: vi.fn(),
   uploadDocumentVersion: vi.fn(),
 }));
 
 vi.mock("../services/documentService", () => documentService);
+vi.mock("../services/folderService", () => folderService);
 vi.mock("../services/api", () => ({
   getApiErrorMessage: (error, fallback) => error?.message || fallback,
 }));
 
 import DocumentDetailsPage from "./DocumentDetailsPage";
+import { getFolders } from "../services/folderService";
 import {
   downloadDocument,
   downloadDocumentVersion,
+  deleteDocumentVersion,
   getDocument,
   getDocumentVersions,
   uploadDocumentVersion,
@@ -92,10 +100,12 @@ afterEach(() => {
 describe("DocumentDetailsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getFolders.mockResolvedValue([]);
     getDocument.mockResolvedValue(documentFixture);
     getDocumentVersions.mockResolvedValue([versionOne, versionTwo]);
     downloadDocument.mockResolvedValue(new Blob(["current file"]));
     downloadDocumentVersion.mockResolvedValue(new Blob(["older file"]));
+    deleteDocumentVersion.mockResolvedValue(undefined);
     uploadDocumentVersion.mockResolvedValue({
       ...documentFixture,
       current_version: 3,
@@ -186,6 +196,35 @@ describe("DocumentDetailsPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Download" }));
     await waitFor(() => expect(downloadDocument).toHaveBeenCalledWith(documentId));
     expect(clickedDownloads).toContain("report.pdf");
+  });
+
+  it("deletes a historical version but never offers deletion for the current version", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderDetails();
+    await screen.findByText("checksum-two");
+
+    expect(screen.getByRole("button", { name: "Delete version 1" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete version 2" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete version 1" }));
+    await waitFor(() => {
+      expect(deleteDocumentVersion).toHaveBeenCalledWith(documentId, 1);
+    });
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Version 1 deleted successfully.",
+    );
+    expect(screen.queryByText("checksum-one")).not.toBeInTheDocument();
+    expect(screen.getByText("checksum-two")).toBeInTheDocument();
+  });
+
+  it("does not delete a historical version when confirmation is cancelled", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    renderDetails();
+    await screen.findByText("checksum-two");
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete version 1" }));
+    expect(deleteDocumentVersion).not.toHaveBeenCalled();
+    expect(screen.getByText("checksum-one")).toBeInTheDocument();
   });
 
   it("shows an error when a historical version download fails", async () => {

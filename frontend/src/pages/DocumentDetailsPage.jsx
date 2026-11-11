@@ -2,9 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 
 import { getApiErrorMessage } from "../services/api";
+import DocumentManagementControls from "../components/DocumentManagementControls";
+import {
+  MAX_DOCUMENT_UPLOAD_SIZE_BYTES,
+  MAX_DOCUMENT_UPLOAD_SIZE_LABEL,
+} from "../config/documentUpload";
 import {
   downloadDocument,
   downloadDocumentVersion,
+  deleteDocumentVersion,
   getDocument,
   getDocumentVersions,
   uploadDocumentVersion,
@@ -72,6 +78,9 @@ function DocumentDetailsPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [versionUploadError, setVersionUploadError] = useState("");
   const [versionUploadSuccess, setVersionUploadSuccess] = useState("");
+  const [deletingVersion, setDeletingVersion] = useState(null);
+  const [versionDeleteError, setVersionDeleteError] = useState("");
+  const [versionDeleteSuccess, setVersionDeleteSuccess] = useState("");
   const versionFileInputRef = useRef(null);
   const invalidId = !UUID_PATTERN.test(id ?? "");
 
@@ -212,6 +221,41 @@ function DocumentDetailsPage() {
     }
   }
 
+  async function handleVersionDelete(version) {
+    if (version.version_number === document.current_version) {
+      setVersionDeleteError("The current document version cannot be deleted.");
+      return;
+    }
+
+    if (!window.confirm(`Delete version ${version.version_number}? This cannot be undone.`)) {
+      return;
+    }
+
+    setVersionDeleteError("");
+    setVersionDeleteSuccess("");
+    setDeletingVersion(version.version_number);
+
+    try {
+      await deleteDocumentVersion(document.id, version.version_number);
+      setVersionLoadState((current) => ({
+        ...current,
+        versions: current.id === id
+          ? current.versions.filter((item) => item.version_number !== version.version_number)
+          : current.versions,
+      }));
+      setVersionDeleteSuccess(`Version ${version.version_number} deleted successfully.`);
+    } catch (requestError) {
+      setVersionDeleteError(
+        getApiErrorMessage(
+          requestError,
+          `Unable to delete version ${version.version_number}. Please try again.`,
+        ),
+      );
+    } finally {
+      setDeletingVersion(null);
+    }
+  }
+
   async function handleVersionUpload(event) {
     event.preventDefault();
     setVersionUploadError("");
@@ -234,6 +278,11 @@ function DocumentDetailsPage() {
 
     if (versionFile.size === 0) {
       setVersionUploadError("Empty files cannot be uploaded.");
+      return;
+    }
+
+    if (versionFile.size > MAX_DOCUMENT_UPLOAD_SIZE_BYTES) {
+      setVersionUploadError(`The file must be ${MAX_DOCUMENT_UPLOAD_SIZE_LABEL} or smaller.`);
       return;
     }
 
@@ -372,6 +421,15 @@ function DocumentDetailsPage() {
             </div>
           </dl>
 
+          <DocumentManagementControls
+            document={document}
+            onDocumentUpdated={(updatedDocument) =>
+              setLoadState((current) =>
+                current.id === id ? { ...current, document: updatedDocument } : current,
+              )
+            }
+          />
+
           <form
             className="document-upload document-version-upload"
             onSubmit={handleVersionUpload}
@@ -479,6 +537,17 @@ function DocumentDetailsPage() {
               </p>
             )}
 
+            {versionDeleteError && (
+              <p className="document-version-history__message document-version-history__message--error" role="alert">
+                {versionDeleteError}
+              </p>
+            )}
+            {versionDeleteSuccess && (
+              <p className="document-version-history__message" role="status">
+                {versionDeleteSuccess}
+              </p>
+            )}
+
             {!versionsLoading && !versionsError && versions.length > 0 && (
               <div className="documents-table-wrapper document-version-history__table-wrapper">
                 <table className="documents-table document-version-history__table">
@@ -508,17 +577,28 @@ function DocumentDetailsPage() {
                           {version.checksum || "Unavailable"}
                         </td>
                         <td>
-                          <button
-                            className="document-version-history__download"
-                            type="button"
-                            onClick={() => handleVersionDownload(version)}
-                            disabled={downloadingVersion !== null}
-                            aria-label={`Download version ${version.version_number}`}
-                          >
-                            {downloadingVersion === version.version_number
-                              ? "Downloading…"
-                              : "Download"}
-                          </button>
+                          <div className="document-version-history__actions">
+                            <button
+                              className="document-version-history__download"
+                              type="button"
+                              onClick={() => handleVersionDownload(version)}
+                              disabled={downloadingVersion !== null || deletingVersion !== null}
+                              aria-label={`Download version ${version.version_number}`}
+                            >
+                              {downloadingVersion === version.version_number ? "Downloading…" : "Download"}
+                            </button>
+                            {version.version_number !== document.current_version && (
+                              <button
+                                className="document-version-history__delete"
+                                type="button"
+                                onClick={() => handleVersionDelete(version)}
+                                disabled={deletingVersion !== null || downloadingVersion !== null}
+                                aria-label={`Delete version ${version.version_number}`}
+                              >
+                                {deletingVersion === version.version_number ? "Deleting…" : "Delete"}
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

@@ -730,3 +730,58 @@ Synchronize the project instructions, current status, and local-completion check
 ### Next action
 
 From `backend/`, run `python -m pip install -r requirements.txt` followed by `python -m unittest discover -s tests -v`. Review all failures. Execute PostgreSQL-backed checks only against the dedicated disposable test database configured through `TEST_DATABASE_URL`, then record actual results before marking Phase 4 verified.
+
+
+---
+
+## Entry 010 — Phase 5 Frontend Functional Completion and Security
+
+**Date:** 2026-11-11  
+**Phase:** 5 — Frontend Functional Completion and Security  
+**Status:** Implementation Prepared / Awaiting Final Review and Commit Approval  
+**Activity type:** Frontend audit, implementation, and test coverage
+
+### Repository state
+
+- Phase 4 was merged into `main` by PR #8, merge commit `368864d4cf90d0dbc985ed07cbfb212356c21c75`.
+- Created `feature/phase-5-frontend-functional-completion` from that merged `main` commit.
+- Phase 4 runtime verification remains pending; merging did not constitute a test pass.
+
+### 5A — Frontend audit
+
+Reviewed the React/Vite entry point, routing, authentication context, API client, service modules, pages, styles, and existing frontend tests.
+
+The existing frontend already includes registration/login/logout, protected routes, profile retrieval/update, folder create/rename/delete/navigation, document listing/upload/download/soft-delete, search/filter/sort, version upload/download/history, activity history pagination, and page-level loading/error/empty states. These were retained rather than rebuilt.
+
+### 5B–5F — Prepared implementation additions
+
+- Added document rename and move API service methods using the existing FastAPI PATCH endpoints.
+- Added document detail controls for rename and moving a document to an owned folder or the root.
+- Added deletion of historical document versions, with confirmation and no delete control for the current version.
+- Added a shared 10 MiB client-side upload-size check for initial uploads and new versions. Server-side validation remains authoritative.
+- Added response handling for protected API 401 responses: clear the stored access token and notify the authentication context to clear the in-memory session. Login and registration 401 responses are excluded so invalid credentials do not trigger session invalidation.
+- Added client-side email-format feedback to login and registration forms.
+- Prevented repeated logout submissions while logout is in progress.
+- Improved JSON error extraction for current-document and historical-version Blob downloads.
+- Added focused tests for document rename/move service calls, historical-version deletion, document organisation controls, protected-request 401 handling, and authentication-context invalidation.
+
+### Security and architecture constraints
+
+- No backend schema, API contract, or database changes were introduced.
+- No new frontend dependency was added.
+- The existing bearer-token/localStorage approach was retained; localStorage remains readable by JavaScript and therefore depends on preventing XSS. This phase does not claim that localStorage provides HttpOnly-cookie protection.
+- Backend ownership and authorization checks remain authoritative. Frontend controls are usability safeguards, not security boundaries.
+- No AWS resources, AWS integrations, or infrastructure changes were introduced.
+
+### Verification and limitations
+
+- Static source review was performed using the repository files and existing API contracts.
+- Automated frontend tests, ESLint, and the Vite production build were **not executed** in this environment.
+- The project owner requested that broader test execution be deferred until the dedicated testing phase. The new tests are therefore written but remain unexecuted.
+- Phase 5 must not be marked Verified or Complete until the frontend tests, lint, production build, and relevant integrated workflows are executed and their actual outputs recorded.
+- Phase 4 backend runtime verification remains outstanding.
+- No test pass is claimed.
+
+### Outcome and next action
+
+Phase 5 implementation content has been prepared for `feature/phase-5-frontend-functional-completion` as Git objects, but is not yet part of the branch history. It awaits final diff review and separate commit approval. No commit, push, or merge is recorded by this entry. Continue to defer AWS resources and integration until local completion and the explicit AWS readiness gate.

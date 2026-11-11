@@ -62,3 +62,29 @@ export function getApiErrorMessage(
 }
 
 export default api;
+
+
+// A 401 from a protected endpoint invalidates the client session. Login
+// failures are excluded because invalid credentials are an expected response.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const requestPath = String(error?.config?.url ?? "");
+    const isPublicAuthRequest =
+      requestPath.includes("/api/auth/login") ||
+      requestPath.includes("/api/auth/register");
+
+    if (error?.response?.status === 401 && !isPublicAuthRequest) {
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+        } catch {
+          // In-memory authentication state is still cleared below.
+        }
+        window.dispatchEvent(new Event("dms:unauthorized"));
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);

@@ -42,6 +42,16 @@ function RegisterPage() {
       return;
     }
 
+    if (!email) {
+      setError("Please enter your email address.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+
     if (form.password.length < 8) {
       setError("Password must contain at least 8 characters.");
       return;
