@@ -905,3 +905,25 @@ Prepare the approved Phase 7 test corrections and real PostgreSQL-backed API int
 - No push or merge has been performed.
 - A separate commit approval will be requested after test execution/review and the final changed-file inspection.
 
+
+
+---
+
+## Phase 8 — Docker and Local Operational Reliability
+
+**Date:** 2026-11-11  
+**Branch:** `feature/phase-8-docker-local-reliability`  
+**Base:** `74a4db1dfb87e03ca28b282d0ff14860365cc914`  
+**Status:** Implementation prepared; runtime verification pending.
+
+- Updated the backend Compose health check to use the existing `/health/ready` endpoint.
+- Preserved Alembic-before-Uvicorn startup and added shell `exec` for process handoff.
+- Added init and explicit stop grace periods while preserving healthy service dependencies.
+- Preserved loopback-only host ports, bridge networking, and named PostgreSQL/document-storage volumes.
+- Reviewed Dockerfiles and ignore files; updated Nginx Alpine from 1.27 to 1.28. Backend remains Python 3.12 slim/non-root and frontend remains a multi-stage Node 22 build.
+- Added `docs/operations/DOCKER_LOCAL_OPERATIONS.md` for clean-clone setup, configuration, Compose lifecycle, health checks, persistence, backup/restore, and troubleshooting.
+- Updated README and project records.
+- No business logic, schema, migrations, application dependencies, AWS services, or cloud resources were added.
+- Docker validation/build/start, health checks, persistence/recovery, backup/restore, and clean-clone verification have not been run in this session. Phase 7 tests remain unexecuted.
+
+The project owner approved the implementation plan and separately approved creation of the commit with message `Improve Docker Compose local reliability`. No push or merge is authorized.

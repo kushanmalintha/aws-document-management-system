@@ -993,3 +993,25 @@ Do not create **AWS** resources during local completion unless the project owner
 ## Update an item only when its actual status changes.
 
 ## Use Reviewed when code has been inspected but not changed. ## Use Approved only after explicit approval. ## Use Implemented after approved changes have been made. ## Use Verified only after the required checks have actually passed. ## Record failed checks and blockers. ## Keep the project status file synchronized with the checklist. ## Append implementation and verification evidence to the execution log. ## Do not mark a phase complete while mandatory acceptance criteria remain unmet. ## Obtain explicit approval before repository modifications, commits, pushes, or the transition to AWS implementation.
+
+
+---
+
+# Phase 8 — Docker and Local Operational Reliability
+
+- [x] Review existing backend/frontend Dockerfiles and ignore files.
+- [x] Preserve non-root backend, multi-stage frontend, service topology, localhost-only ports, named volumes, and network.
+- [x] Update backend Compose health check to the existing `/health/ready` endpoint.
+- [x] Ensure migrations run before Uvicorn and use `exec` for signal handoff.
+- [x] Add init and explicit stop grace periods.
+- [x] Review Nginx base image tag and update to 1.28 Alpine.
+- [x] Document clean-clone configuration, startup, lifecycle, persistence, backup/restore, and troubleshooting.
+- [ ] Validate Compose configuration locally.
+- [ ] Build images and start the stack.
+- [ ] Verify health checks, logs, migrations, and representative workflows.
+- [ ] Verify PostgreSQL and document persistence across restarts.
+- [ ] Verify recovery and coordinated backup/restore in a disposable environment.
+- [ ] Verify setup from a clean clone.
+- [ ] Run Phase 7 automated suites separately; no test execution is claimed here.
+
+**Status:** Implementation prepared on `feature/phase-8-docker-local-reliability`; runtime and clean-clone verification remain pending. Do not mark Phase 8 verified until actual command output is reviewed.

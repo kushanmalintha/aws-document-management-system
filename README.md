@@ -220,3 +220,8 @@ Work is divided into two major stages:
 2. **AWS implementation:** progressively introduce the planned AWS services after the local acceptance criteria have been met.
 
 Do not create or depend on AWS resources during local completion.
+
+
+## Docker operations and recovery
+
+For clean-clone setup, environment configuration, Compose startup and health checks, restart procedures, persistence, coordinated PostgreSQL/document-storage backup and restore, and troubleshooting, see [Docker and Local Operations](docs/operations/DOCKER_LOCAL_OPERATIONS.md).

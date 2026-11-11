@@ -288,3 +288,8 @@ The current priority is:
 Continue local-first development. Do not introduce AWS resources or integration during Phases 4–11. Phase 4A–4F implementation and backend test coverage were merged into `main` by PR #8 (merge commit `368864d4cf90d0dbc985ed07cbfb212356c21c75`); Phase 4 runtime verification remains pending. Phase 5 was committed on `feature/phase-5-frontend-functional-completion` in commit `a908c531b7bb4fe309d8e4a5a1ab79212f5ecd3e`; tests, lint, and build remain deferred. Phase 6 was committed on `feature/phase-6-api-error-observability` in commit `6d9173b3620c2c03cd3dbc58ede5e187e2f71ee4` (`Implement API error handling and observability`) with documentation follow-up `15817e54262df045231dce84cacd5b8ccbb14386`. The branch is not merged into `main`; tests, lint, build, and runtime verification remain deferred pending Phase 7. Phase 7 is in progress on `feature/phase-7-testing`; tests have been added/fixed but not executed. Do not claim runtime verification until evidence is recorded.
 
 The project owner must approve repository changes, commits, pushes, merges, and any AWS transition separately.
+
+
+## Phase 8 status
+
+Phase 8 — Docker and Local Operational Reliability is prepared on `feature/phase-8-docker-local-reliability`. The Compose readiness check, migration/process handoff, shutdown settings, Nginx image tag review, and operations guide have been updated. Runtime Docker validation, builds, startup, health checks, persistence, backup/restore, and clean-clone verification remain pending. Phase 7 automated tests and Phase 4–6 runtime verification remain outstanding. Do not introduce AWS during Phases 4–11. Do not push or merge without explicit approval.
