@@ -113,7 +113,6 @@ class DocumentRenameAndMoveTests(unittest.TestCase):
             deleted_at=None,
             name="report.pdf",
             folder_id=None,
-            user_id=self.user_id,
             content_type="application/pdf",
             size_bytes=7,
             current_version=1,
