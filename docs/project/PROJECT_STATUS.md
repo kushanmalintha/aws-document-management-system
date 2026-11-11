@@ -243,3 +243,12 @@ Run PostgreSQL-backed integrity checks only with a dedicated disposable database
 Phase 3 is accepted based on the project owner's aggregate manual and automated backend test report recorded in Entry 007; detailed outputs and individual case results were not supplied, and PostgreSQL-backed integration coverage was not separately confirmed.
 
 Keep the startup-log review assigned to Phase 6. Do not create AWS resources during local completion.
+
+
+## Phase 8 — Docker and Local Operational Reliability
+
+**Implementation status:** Prepared on `feature/phase-8-docker-local-reliability` from Phase 7 commit `74a4db1dfb87e03ca28b282d0ff14860365cc914`. Compose readiness, migration process handoff, container shutdown settings, frontend image tag review, and operational documentation have been updated.
+
+**Verification status:** Docker Compose validation, image builds, container startup, migrations, health checks, persistence, restart recovery, backup/restore, and clean-clone checks have not been executed. Phase 7 backend/frontend/PostgreSQL integration tests and Phase 4–6 runtime verification remain outstanding. No AWS resources or integrations are included.
+
+**Next action:** Review the feature branch diff and obtain separate commit approval. Do not push or merge without explicit authorization.

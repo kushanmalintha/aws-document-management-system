@@ -2,36 +2,29 @@ services:
   postgres:
     image: postgres:17
     restart: unless-stopped
-
+    stop_grace_period: 30s
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in the root .env file}
       POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in the root .env file}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the root .env file}
-
     ports:
       - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
-
     volumes:
       - dms-postgres-data:/var/lib/postgresql/data
-
-    networks:
-      - dms-network
-
+    networks: [dms-network]
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 15s
 
   backend:
     build:
       context: ./backend
     restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
     env_file:
       - ./backend/.env
     environment:
@@ -48,35 +41,33 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    networks:
-      - dms-network
-    command: >-
-      sh -c "alembic upgrade head &&
-      uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    networks: [dms-network]
+    command:
+      - sh
+      - -c
+      - "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"
     healthcheck:
       test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health/database', timeout=3)",
-        ]
+        - CMD
+        - python
+        - -c
+        - "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 30s
 
   frontend:
     build:
       context: ./frontend
     restart: unless-stopped
+    stop_grace_period: 10s
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-8080}:80"
     depends_on:
       backend:
         condition: service_healthy
-    networks:
-      - dms-network
+    networks: [dms-network]
     healthcheck:
       test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://127.0.0.1/ || exit 1"]
       interval: 10s
@@ -84,11 +75,9 @@ services:
       retries: 5
       start_period: 5s
 
-
 volumes:
   dms-postgres-data:
   dms-local-storage:
-
 
 networks:
   dms-network:
