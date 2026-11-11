@@ -1,7 +1,16 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class RenameDocumentRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+
+
+class MoveDocumentRequest(BaseModel):
+    # Explicit null moves the document to the user's root.
+    folder_id: UUID | None
 
 
 class DocumentResponse(BaseModel):
@@ -18,6 +27,7 @@ class DocumentResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None
+
 
 class DocumentVersionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

@@ -27,7 +27,12 @@ from app.models.document import Document, DocumentStatus
 from app.models.document_version import DocumentVersion
 from app.models.folder import Folder
 from app.models.user import User
-from app.schemas.document import DocumentResponse, DocumentVersionResponse
+from app.schemas.document import (
+    DocumentResponse,
+    DocumentVersionResponse,
+    MoveDocumentRequest,
+    RenameDocumentRequest,
+)
 from app.services.activity_service import record_activity
 from app.services.storage import storage_service
 from app.services.upload_validation import (
@@ -273,6 +278,143 @@ def get_document(
 
     return DocumentResponse.model_validate(document)
 
+
+
+@router.patch(
+    "/{document_id}",
+    response_model=DocumentResponse,
+)
+def rename_document(
+    document_id: UUID,
+    request: RenameDocumentRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    document = db.get(Document, document_id)
+
+    if document is None or document.deleted_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
+    if document.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this document",
+        )
+
+    try:
+        new_name, new_extension = normalize_upload_filename(
+            request.name,
+            settings.allowed_document_extensions,
+            settings.max_upload_filename_length,
+        )
+    except UploadValidationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+    current_extension = PurePosixPath(document.name).suffix.lower()
+    if new_extension != current_extension:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The document extension cannot be changed",
+        )
+
+    old_name = document.name
+    if new_name == old_name:
+        return DocumentResponse.model_validate(document)
+
+    document.name = new_name
+    record_activity(
+        db=db,
+        user_id=current_user.id,
+        action="DOCUMENT_RENAMED",
+        document_id=document.id,
+        metadata_json={"old_name": old_name, "new_name": new_name},
+    )
+
+    try:
+        db.commit()
+        db.refresh(document)
+    except Exception as exc:
+        db.rollback()
+        logger.exception("Document rename failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="The document could not be renamed",
+        ) from exc
+
+    return DocumentResponse.model_validate(document)
+
+
+@router.patch(
+    "/{document_id}/move",
+    response_model=DocumentResponse,
+)
+def move_document(
+    document_id: UUID,
+    request: MoveDocumentRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    document = db.get(Document, document_id)
+
+    if document is None or document.deleted_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
+    if document.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this document",
+        )
+
+    destination_folder_id = request.folder_id
+    if destination_folder_id is not None:
+        folder = db.get(Folder, destination_folder_id)
+        if folder is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Folder not found",
+            )
+        if folder.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have access to this folder",
+            )
+
+    old_folder_id = document.folder_id
+    if old_folder_id == destination_folder_id:
+        return DocumentResponse.model_validate(document)
+
+    document.folder_id = destination_folder_id
+    record_activity(
+        db=db,
+        user_id=current_user.id,
+        action="DOCUMENT_MOVED",
+        document_id=document.id,
+        metadata_json={
+            "old_folder_id": str(old_folder_id) if old_folder_id else None,
+            "new_folder_id": (
+                str(destination_folder_id) if destination_folder_id else None
+            ),
+        },
+    )
+
+    try:
+        db.commit()
+        db.refresh(document)
+    except Exception as exc:
+        db.rollback()
+        logger.exception("Document move failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="The document could not be moved",
+        ) from exc
+
+    return DocumentResponse.model_validate(document)
 
 @router.post(
     "/{document_id}/versions",
